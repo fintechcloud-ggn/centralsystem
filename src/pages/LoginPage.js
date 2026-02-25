@@ -25,64 +25,65 @@ function Login() {
   };
 
 return (
-  <div className="flex min-h-screen">
-
-    {/* Left Image Section */}
-    <div 
-      className="w-2/3 bg-cover bg-center"
-      style={{ backgroundImage: `url("/Login.png")` }}
-    ></div>
-
-    {/* Right Login Section */}
-    <div className="w-3/5 flex items-center justify-end pr-32 bg-opacity-90">
-      <div className="bg-white w-96 p-8 rounded-lg shadow-xl">
-        <h2 className="text-2xl font-bold text-center mb-6">
-          Fintech Cloud
-        </h2>
-
-        <form className="space-y-4" onSubmit={handleLogin}>
-          <div>
-            <label className="block text-gray-600 text-sm mb-1">
-              Email Address
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@example.com"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-600 text-sm mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {error && (
-            <p className="text-red-500 text-sm">{error}</p>
-          )}
-
-          <div className="pt-4">
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 w-full"
-            >
-              Login
-            </button>
-          </div>
-        </form>
-      </div>
+  <div className="relative min-h-screen overflow-hidden bg-[#87A9DC] flex items-center justify-center px-4 py-8">
+    <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute -left-32 top-0 h-[55%] w-[75%] bg-[#95B4E3] rotate-[-24deg] origin-top-left opacity-80" />
+      <div className="absolute -right-24 bottom-[-120px] h-[55%] w-[70%] bg-[#9AB8E7] rotate-[-24deg] origin-bottom-right opacity-80" />
     </div>
 
+    <div className="relative w-full max-w-[420px] rounded-2xl bg-[#243D69]/95 border border-[#35558d] shadow-[0_24px_40px_rgba(13,28,54,0.45)] backdrop-blur-sm px-6 md:px-8 py-7 md:py-9">
+      <h2 className="text-center text-white text-3xl md:text-4xl font-light tracking-[0.15em] mb-9">
+        ADMIN LOGIN
+      </h2>
+
+      <form className="space-y-5" onSubmit={handleLogin}>
+        <div className="relative">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Username"
+            className="w-full h-12 rounded-lg bg-[#3b8e60] text-[#eef9f2] placeholder:text-[#d0ead9] text-base px-4 pr-12 border border-[#57a978] focus:outline-none focus:ring-2 focus:ring-[#9fe1b8]"
+          />
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#d9f1e2] text-lg">
+            &#128100;
+          </span>
+        </div>
+
+        <div className="relative">
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            className="w-full h-12 rounded-lg bg-[#3b8e60] text-[#eef9f2] placeholder:text-[#d0ead9] text-base px-4 pr-12 border border-[#57a978] focus:outline-none focus:ring-2 focus:ring-[#9fe1b8]"
+          />
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#d9f1e2] text-lg">
+            &#128274;
+          </span>
+        </div>
+
+        <div className="text-right -mt-1">
+          <button
+            type="button"
+            className="text-[#dff3e6] text-sm hover:text-white transition-colors"
+          >
+            Forget Password
+          </button>
+        </div>
+
+        {error && (
+          <p className="text-red-300 text-sm font-medium">{error}</p>
+        )}
+
+        <button
+          type="submit"
+          className="mt-2 h-11 w-28 bg-[#4B75B6] text-white text-base rounded-lg hover:bg-[#5b88ce] transition-colors"
+        >
+          Login
+        </button>
+      </form>
+    </div>
   </div>
 );
 }
