@@ -1,0 +1,99 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.carousel-wrapper {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #f8f8f8, #eae6ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.card {
+  width: 85%;
+  height: 75%;
+  background: white;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 60px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+}
+
+.left {
+  width: 50%;
+}
+
+.company {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 42px;
+  margin-bottom: 10px;
+}
+
+.title span {
+  color: purple;
+}
+
+.name {
+  font-size: 48px;
+  margin: 20px 0;
+  color: #333;
+}
+
+.message {
+  font-size: 18px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.right {
+  width: 40%;
+  display: flex;
+  justify-content: center;
+}
+
+.image-circle {
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  border: 6px solid purple;
+  overflow: hidden;
+}
+
+.image-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nav-buttons {
+  position: absolute;
+  bottom: 40px;
+}
+
+.nav-buttons button {
+  padding: 15px 25px;
+  font-size: 22px;
+  margin: 0 15px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  background: purple;
+  color: white;
+  transition: 0.3s;
+}
+
+.nav-buttons button:hover {
+  background: #5a00b5;
+}
