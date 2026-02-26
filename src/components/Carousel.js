@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
+import Contest1 from "./Contest1";
 
 function Carousel() {
   const slides = [
     {
       id: 1,
-      image: "https://picsum.photos/id/1018/1600/900",
+      // image: "https://picsum.photos/id/1018/1600/900",
       title: "Welcome",
     },
     {
@@ -45,18 +46,24 @@ function Carousel() {
             key={slide.id}
             className="w-full h-screen flex-shrink-0 relative"
           >
-            <img
-              src={slide.image}
-              alt={slide.title}
-              className="w-full h-full object-cover"
-            />
+            {slide.id === 1 ? (
+              <Contest1 />
+            ) : (
+              <>
+                <img
+                  src={slide.image}
+                  alt={slide.title}
+                  className="w-full h-full object-cover"
+                />
 
-            {/* Optional Overlay Text */}
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <h1 className="text-white text-3xl md:text-6xl font-bold">
-                {slide.title}
-              </h1>
-            </div>
+                {/* Optional Overlay Text */}
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <h1 className="text-white text-3xl md:text-6xl font-bold">
+                    {slide.title}
+                  </h1>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
