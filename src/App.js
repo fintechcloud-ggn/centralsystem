@@ -4,6 +4,10 @@ import AdminPanel from './pages/Admin_Panel';
 import { Route, Routes } from 'react-router-dom';
 import Login from './pages/LoginPage';
 import NewUser from './pages/AddNewUser';
+import AdminOverview from './pages/AdminOverview';
+import AddNewContest from './pages/AddNewContest';
+import EditExisting from './pages/EditExisting';
+import DeleteExisting from './pages/DeleteExisting';
 import { Toaster } from "react-hot-toast";
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 function App() {
@@ -21,8 +25,11 @@ function App() {
         </ProtectedAdminRoute>
       }
     >
-    <Route index element={<NewUser/>}/>
+    <Route index element={<AdminOverview/>}/>
     <Route path="NewUser" element={<NewUser/>}/>
+    <Route path="add-contest" element={<AddNewContest/>}/>
+    <Route path="edit-existing" element={<EditExisting/>}/>
+    <Route path="delete-existing" element={<DeleteExisting/>}/>
     </Route>
   </Routes>
   </>

@@ -87,6 +87,42 @@ const query = (sql, values = []) =>
     });
   });
 
+const toDdMmYy = (value) => {
+  if (!value) return null;
+  const raw = String(value).trim();
+
+  if (/^\d{6}$/.test(raw)) {
+    return raw;
+  }
+
+  const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch;
+    return `${day}${month}${year.slice(-2)}`;
+  }
+
+  const dmySlash = raw.match(/^(\d{2})\/(\d{2})\/(\d{2}|\d{4})$/);
+  if (dmySlash) {
+    const [, day, month, yearPart] = dmySlash;
+    const year = yearPart.length === 4 ? yearPart.slice(-2) : yearPart;
+    return `${day}${month}${year}`;
+  }
+
+  return null;
+};
+
+const toIsoDate = (value) => {
+  if (!value) return null;
+  const raw = String(value).trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
+};
+
+const sanitizeFileName = (value) =>
+  String(value || "image")
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9._-]/g, "");
+
 const initializeAdminTable = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS admin_users (
@@ -124,20 +160,100 @@ const initializeAdminTable = async () => {
 };
 
 const initializeEmployeesTable = async () => {
+  await query("DROP TABLE IF EXISTS employee_photos");
+  await query("DROP TABLE IF EXISTS employees");
+
   const createTableQuery = `
-    CREATE TABLE IF NOT EXISTS employees (
+    CREATE TABLE employees (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      employeeId VARCHAR(100) NOT NULL UNIQUE,
-      name VARCHAR(255) NOT NULL,
-      dob DATE NOT NULL,
-      email VARCHAR(255) NOT NULL UNIQUE,
-      phone VARCHAR(50) NOT NULL,
-      image_url TEXT NOT NULL,
+      employee_code VARCHAR(100) NOT NULL UNIQUE,
+      employee_name VARCHAR(255) NOT NULL,
+      company VARCHAR(255) NOT NULL,
+      department VARCHAR(255) NOT NULL,
+      division VARCHAR(255) NOT NULL,
+      location VARCHAR(255) NOT NULL,
+      designation VARCHAR(255) NOT NULL,
+      employment_type VARCHAR(100) NOT NULL,
+      gender VARCHAR(30) NOT NULL,
+      date_of_birth CHAR(6) NOT NULL,
+      doj DATE NOT NULL,
+      status VARCHAR(100) NOT NULL,
+      biometric_status VARCHAR(100) NOT NULL,
+      image_s3_key VARCHAR(1024) NULL,
+      image_url TEXT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
 
   await query(createTableQuery);
+
+  const createPhotosTableQuery = `
+    CREATE TABLE employee_photos (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      employee_code VARCHAR(100) NOT NULL,
+      image_s3_key VARCHAR(1024) NOT NULL UNIQUE,
+      image_url TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_employee_code (employee_code)
+    )
+  `;
+
+  await query(createPhotosTableQuery);
+};
+
+const seedEmployeesTable = async () => {
+  const insertSeed = `
+    INSERT INTO employees (
+      employee_code,
+      employee_name,
+      company,
+      department,
+      division,
+      location,
+      designation,
+      employment_type,
+      gender,
+      date_of_birth,
+      doj,
+      status,
+      biometric_status,
+      image_s3_key,
+      image_url
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      employee_name = VALUES(employee_name),
+      company = VALUES(company),
+      department = VALUES(department),
+      division = VALUES(division),
+      location = VALUES(location),
+      designation = VALUES(designation),
+      employment_type = VALUES(employment_type),
+      gender = VALUES(gender),
+      date_of_birth = VALUES(date_of_birth),
+      doj = VALUES(doj),
+      status = VALUES(status),
+      biometric_status = VALUES(biometric_status),
+      image_s3_key = VALUES(image_s3_key),
+      image_url = VALUES(image_url)
+  `;
+
+  await query(insertSeed, [
+    "FTP25001",
+    "Ashutosh Sharma",
+    "FAST PAISE",
+    "HOD",
+    "Ghaziabad",
+    "Sec-63",
+    "Hod",
+    "Permanent",
+    "Male",
+    "010100",
+    "2025-06-01",
+    "Working",
+    "Active",
+    null,
+    null
+  ]);
 };
 
 const authenticateAdmin = (req, res, next) => {
@@ -209,48 +325,288 @@ app.get("/api/admin/verify", authenticateAdmin, (req, res) => {
   return res.json({ valid: true, admin: req.admin });
 });
 
+app.get("/api/employees", authenticateAdmin, async (req, res) => {
+  try {
+    const rows = await query(
+      `SELECT
+        id,
+        employee_code,
+        employee_name,
+        company,
+        department,
+        division,
+        location,
+        designation,
+        employment_type,
+        gender,
+        date_of_birth,
+        doj,
+        status,
+        biometric_status,
+        image_s3_key,
+        image_url,
+        created_at
+      FROM employees
+      ORDER BY id DESC`
+    );
+
+    return res.json(rows);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Server Error" });
+  }
+});
+
 // API Route
 app.post("/api/employees", authenticateAdmin, upload.single("image"), async (req, res) => {
   try {
-    const { employeeId, name, dob, email, phone } = req.body;
+    const {
+      employeeId,
+      name,
+      dob,
+      employeeCode,
+      employeeName,
+      company,
+      department,
+      division,
+      location,
+      designation,
+      employmentType,
+      gender,
+      doj,
+      status,
+      biometricStatus
+    } = req.body;
+
+    const resolvedEmployeeCode = employeeCode || employeeId;
+    const resolvedEmployeeName = employeeName || name;
+    const resolvedDateOfBirth = toDdMmYy(req.body.dateOfBirth || dob);
+    const resolvedDoj = toIsoDate(doj) || toIsoDate(dob) || null;
+
+    if (!resolvedEmployeeCode || !resolvedEmployeeName) {
+      return res.status(400).json({
+        error: "employeeCode/employeeId and employeeName/name are required"
+      });
+    }
+
+    if (!resolvedDateOfBirth) {
+      return res.status(400).json({
+        error: "dateOfBirth/dob is required and must be in ddmmyy format"
+      });
+    }
 
     const file = req.file;
     if (!file) {
       return res.status(400).json({ error: "Image is required" });
     }
 
-    // Upload image to S3
-    const params = {
+    const s3Key = `${resolvedEmployeeCode}/${Date.now()}_${sanitizeFileName(file.originalname)}`;
+    const uploadResult = await s3.upload({
       Bucket: process.env.AWS_S3_BUCKET,
-      Key: `employees/${Date.now()}_${file.originalname}`,
+      Key: s3Key,
       Body: file.buffer,
       ContentType: file.mimetype
-    };
-
-    const uploadResult = await s3.upload(params).promise();
-
-    const imageUrl = uploadResult.Location;
+    }).promise();
 
     // Save to MySQL
     const sql = `
       INSERT INTO employees 
-      (employeeId, name, dob, email, phone, image_url)
-      VALUES (?, ?, ?, ?, ?, ?)
+      (
+        employee_code, employee_name, company, department, division,
+        location, designation, employment_type, gender, date_of_birth, doj, status, biometric_status,
+        image_s3_key, image_url
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(
       sql,
-      [employeeId, name, dob, email, phone, imageUrl],
+      [
+        resolvedEmployeeCode,
+        resolvedEmployeeName,
+        company || "",
+        department || "",
+        division || "",
+        location || "",
+        designation || "",
+        employmentType || "",
+        gender || "",
+        resolvedDateOfBirth,
+        resolvedDoj,
+        status || "Working",
+        biometricStatus || "Active",
+        s3Key,
+        uploadResult.Location
+      ],
       (err, result) => {
         if (err) return res.status(500).json(err);
-
-        res.json({ message: "Employee Created Successfully" });
+        db.query(
+          "INSERT INTO employee_photos (employee_code, image_s3_key, image_url) VALUES (?, ?, ?)",
+          [resolvedEmployeeCode, s3Key, uploadResult.Location],
+          (photoErr) => {
+            if (photoErr) return res.status(500).json(photoErr);
+            return res.json({ message: "Employee Created Successfully" });
+          }
+        );
       }
     );
 
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Server Error" });
+  }
+});
+
+app.put("/api/employees/:employeeCode", authenticateAdmin, async (req, res) => {
+  try {
+    const { employeeCode } = req.params;
+    const payload = req.body || {};
+    const allowedFields = {
+      employeeName: "employee_name",
+      company: "company",
+      department: "department",
+      division: "division",
+      location: "location",
+      designation: "designation",
+      employmentType: "employment_type",
+      gender: "gender",
+      dateOfBirth: "date_of_birth",
+      doj: "doj",
+      status: "status",
+      biometricStatus: "biometric_status"
+    };
+
+    const updates = [];
+    const values = [];
+
+    Object.entries(allowedFields).forEach(([inputKey, dbKey]) => {
+      if (payload[inputKey] === undefined) return;
+
+      let value = payload[inputKey];
+      if (inputKey === "dateOfBirth") {
+        value = toDdMmYy(value);
+        if (!value) return;
+      }
+      if (inputKey === "doj") {
+        value = toIsoDate(value);
+        if (!value) return;
+      }
+
+      updates.push(`${dbKey} = ?`);
+      values.push(typeof value === "string" ? value.trim() : value);
+    });
+
+    if (payload.selectedImageS3Key !== undefined) {
+      const selectedKey = String(payload.selectedImageS3Key || "").trim();
+      if (selectedKey) {
+        const photos = await query(
+          "SELECT image_s3_key, image_url FROM employee_photos WHERE employee_code = ? AND image_s3_key = ? LIMIT 1",
+          [employeeCode, selectedKey]
+        );
+        if (photos.length === 0) {
+          return res.status(400).json({ error: "Selected photo does not belong to employee" });
+        }
+        updates.push("image_s3_key = ?", "image_url = ?");
+        values.push(photos[0].image_s3_key, photos[0].image_url);
+      }
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: "No valid fields provided for update" });
+    }
+
+    values.push(employeeCode);
+    const result = await query(
+      `UPDATE employees SET ${updates.join(", ")} WHERE employee_code = ?`,
+      values
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    return res.json({ message: "Employee updated successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Server Error" });
+  }
+});
+
+app.get("/api/employees/:employeeCode/photos", authenticateAdmin, async (req, res) => {
+  try {
+    const { employeeCode } = req.params;
+    const rows = await query(
+      `SELECT id, employee_code, image_s3_key, image_url, created_at
+       FROM employee_photos
+       WHERE employee_code = ?
+       ORDER BY created_at DESC`,
+      [employeeCode]
+    );
+    return res.json(rows);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Server Error" });
+  }
+});
+
+app.post("/api/employees/:employeeCode/photos", authenticateAdmin, upload.single("image"), async (req, res) => {
+  try {
+    const { employeeCode } = req.params;
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: "Image is required" });
+    }
+
+    const employeeRows = await query(
+      "SELECT employee_code FROM employees WHERE employee_code = ? LIMIT 1",
+      [employeeCode]
+    );
+    if (employeeRows.length === 0) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    const s3Key = `${employeeCode}/${Date.now()}_${sanitizeFileName(file.originalname)}`;
+    const uploadResult = await s3.upload({
+      Bucket: process.env.AWS_S3_BUCKET,
+      Key: s3Key,
+      Body: file.buffer,
+      ContentType: file.mimetype
+    }).promise();
+
+    await query(
+      "INSERT INTO employee_photos (employee_code, image_s3_key, image_url) VALUES (?, ?, ?)",
+      [employeeCode, s3Key, uploadResult.Location]
+    );
+
+    await query(
+      "UPDATE employees SET image_s3_key = ?, image_url = ? WHERE employee_code = ?",
+      [s3Key, uploadResult.Location, employeeCode]
+    );
+
+    return res.json({
+      message: "Photo uploaded successfully",
+      photo: { employee_code: employeeCode, image_s3_key: s3Key, image_url: uploadResult.Location }
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Server Error" });
+  }
+});
+
+app.delete("/api/employees/:employeeCode", authenticateAdmin, async (req, res) => {
+  try {
+    const { employeeCode } = req.params;
+    await query("DELETE FROM employee_photos WHERE employee_code = ?", [employeeCode]);
+    const result = await query("DELETE FROM employees WHERE employee_code = ?", [employeeCode]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    return res.json({ message: "Employee deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Server Error" });
   }
 });
 
@@ -270,6 +626,7 @@ connectDb()
     return initializeAdminTable();
   })
   .then(() => initializeEmployeesTable())
+  .then(() => seedEmployeesTable())
   .then(() => {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
