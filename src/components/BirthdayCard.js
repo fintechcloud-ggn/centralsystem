@@ -27,7 +27,7 @@ function BirthdayCarousel() {
   const [birthdayUsers, setBirthdayUsers] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [phase, setPhase] = useState("birthday");
-  const CAROUSEL_DURATION_MS = 9000;
+  const CAROUSEL_DURATION_MS = 180000;
 
   // Get Today's Birthdays
   useEffect(() => {

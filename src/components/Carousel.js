@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from "react";
 import Contest1 from "./Contest1";
+import Contest2 from "./Contest2";
+import Contest3 from "./Contest3";
 
 function Carousel() {
   const slides = [
     {
       id: 1,
-      // image: "https://picsum.photos/id/1018/1600/900",
-      title: "Welcome",
+      component: Contest1,
     },
     {
       id: 2,
-      image: "https://picsum.photos/id/1015/1600/900",
-      title: "Discover",
+      component: Contest2,
     },
     {
       id: 3,
-      image: "https://picsum.photos/id/1019/1600/900",
-      title: "Enjoy",
+      component: Contest3,
     },
   ];
 
@@ -28,44 +27,30 @@ function Carousel() {
       setCurrentIndex((prev) =>
         prev === slides.length - 1 ? 0 : prev + 1
       );
-    }, 4000);
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [slides.length]);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className="relative w-full h-[100dvh] overflow-hidden">
 
       {/* Slides Container */}
       <div
         className="flex h-full transition-transform duration-700 ease-in-out"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
-        {slides.map((slide) => (
-          <div
-            key={slide.id}
-            className="w-full h-screen flex-shrink-0 relative"
-          >
-            {slide.id === 1 ? (
-              <Contest1 />
-            ) : (
-              <>
-                <img
-                  src={slide.image}
-                  alt={slide.title}
-                  className="w-full h-full object-cover"
-                />
-
-                {/* Optional Overlay Text */}
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                  <h1 className="text-white text-3xl md:text-6xl font-bold">
-                    {slide.title}
-                  </h1>
-                </div>
-              </>
-            )}
-          </div>
-        ))}
+        {slides.map((slide) => {
+          const SlideComponent = slide.component;
+          return (
+            <div
+              key={slide.id}
+              className="w-full h-[100dvh] flex-shrink-0 relative"
+            >
+              <SlideComponent />
+            </div>
+          );
+        })}
       </div>
 
       {/* Dots */}
