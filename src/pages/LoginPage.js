@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import axios from "axios";
+import { setAdminToken, isAdminAuthenticated } from "../components/adminAuth";
 function Login() {
 
   const navigate = useNavigate();
@@ -8,19 +10,31 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
-  // Fixed Admin
-  const ADMIN_EMAIL = "admin@fintech.com";
-  const ADMIN_PASSWORD = "admin123";
+  useEffect(() => {
+    if (isAdminAuthenticated()) {
+      navigate("/admin", { replace: true });
+    }
+  }, [navigate]);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
 
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/admin/login`, {
+        email,
+        password
+      });
+
+      setAdminToken(response.data.token);
       toast.success("Login Successful");
-      navigate("/admin");  
-    } else {
-      setError("Invalid Email or Password");
+      navigate("/admin", { replace: true });
+    } catch (loginError) {
+      const message =
+        loginError?.response?.data?.error || "Invalid Email or Password";
+      setError(message);
     }
   };
 

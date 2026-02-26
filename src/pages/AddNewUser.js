@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { getAdminToken } from "../components/adminAuth";
 function NewUser() {
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
   const [formData, setFormData] = useState({
     employeeId: "",
@@ -36,7 +38,7 @@ const handleSubmit = async (e) => {
   data.append("image", formData.image);
 
   try {
-    await axios.post("http://localhost:5000/api/employees", data, {
+    const res = await axios.post("http://localhost:5000/api/employees", data, {
       headers: { "Content-Type": "multipart/form-data" }
     });
 

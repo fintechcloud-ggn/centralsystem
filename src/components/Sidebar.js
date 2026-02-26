@@ -1,5 +1,14 @@
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { clearAdminToken } from "./adminAuth";
 function Sidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    clearAdminToken();
+    navigate("/login");
+  };
+
   return (
     <div className="w-64 bg-gradient-to-b from-blue-900 to-blue-700 text-white min-h-screen p-6">
       <div className="mb-10">
@@ -14,7 +23,11 @@ function Sidebar() {
         <li className="hover:text-blue-300 cursor-pointer">Add new Contest</li>
         <li className="hover:text-blue-300 cursor-pointer">Edit Existing</li>
         <li className="hover:text-blue-300 cursor-pointer">Delete Existing</li>
-        <li className="hover:text-blue-300 cursor-pointer">Logout</li>
+        <li>
+          <button type="button" onClick={handleLogout} className="hover:text-blue-300 cursor-pointer text-white bg-transparent border-0 p-0">
+            Logout
+          </button>
+        </li>
       </ul>
     </div>
   );
