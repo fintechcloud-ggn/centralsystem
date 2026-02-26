@@ -28,6 +28,7 @@ function NewUser() {
 
 const handleSubmit = async (e) => {
   e.preventDefault();
+  const token = getAdminToken();
 
   const data = new FormData();
   data.append("employeeId", formData.employeeId);
@@ -38,8 +39,11 @@ const handleSubmit = async (e) => {
   data.append("image", formData.image);
 
   try {
-    const res = await axios.post("http://localhost:5000/api/employees", data, {
-      headers: { "Content-Type": "multipart/form-data" }
+    await axios.post(`${API_BASE_URL}/api/employees`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      }
     });
 
     alert("Employee Created Successfully!");
