@@ -5,9 +5,9 @@ import Carousel from "./Carousel";
 const EMPLOYEES = [
   {
     id: 101,
-    name: "Anjali Tomar",
+    name: "Kushal Madhogaria",
     dob: "1998-02-26",
-    image: "image1.png",
+    image: "image4.png",
   },
   {
     id: 102,
