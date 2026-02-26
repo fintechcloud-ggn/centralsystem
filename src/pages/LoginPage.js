@@ -43,7 +43,7 @@ return (
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Username"
-            className="w-full h-12 rounded-lg bg-[#3b8e60] text-[#eef9f2] placeholder:text-[#d0ead9] text-base px-4 pr-12 border border-[#57a978] focus:outline-none focus:ring-2 focus:ring-[#9fe1b8]"
+            className="w-full h-12 rounded-lg bg-white text-[#1f2937] placeholder:text-[#6b7280] text-base px-4 pr-12 border border-[#57a978] focus:outline-none focus:ring-2 focus:ring-[#9fe1b8]"
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#d9f1e2] text-lg">
             &#128100;
@@ -56,7 +56,7 @@ return (
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
-            className="w-full h-12 rounded-lg bg-[#3b8e60] text-[#eef9f2] placeholder:text-[#d0ead9] text-base px-4 pr-12 border border-[#57a978] focus:outline-none focus:ring-2 focus:ring-[#9fe1b8]"
+            className="w-full h-12 rounded-lg bg-white text-[#1f2937] placeholder:text-[#6b7280] text-base px-4 pr-12 border border-[#57a978] focus:outline-none focus:ring-2 focus:ring-[#9fe1b8]"
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#d9f1e2] text-lg">
             &#128274;

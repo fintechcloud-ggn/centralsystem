@@ -1,9 +1,7 @@
-import logo from './logo.svg';
 import './App.css';
 import BirthdayCard from './components/BirthdayCard';
 import AdminPanel from './pages/Admin_Panel';
 import { Route, Routes } from 'react-router-dom';
-import CreateEmployee from './components/CreateEmployee';
 import Login from './pages/LoginPage';
 import NewUser from './pages/AddNewUser';
 import { Toaster } from "react-hot-toast";

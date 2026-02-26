@@ -1,6 +1,5 @@
 import React from "react";
 import Sidebar from "../components/Sidebar";
-import CreateEmployee from "../components/CreateEmployee";
 import { Outlet } from "react-router-dom";
 function AdminPanel() {
   return (

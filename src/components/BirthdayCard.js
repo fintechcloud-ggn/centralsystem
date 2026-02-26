@@ -2,32 +2,32 @@
 import React, { useEffect, useState } from "react";
 import Carousel from "./Carousel";
 
+const EMPLOYEES = [
+  {
+    id: 101,
+    name: "Anjali Tomar",
+    dob: "1998-02-26",
+    image: "image1.png",
+  },
+  {
+    id: 102,
+    name: "Rahul Verma",
+    dob: "1998-02-25",
+    image: "image2.png",
+  },
+  {
+    id: 103,
+    name: "Ravi",
+    dob: "1998-02-26",
+    image: "image3.png",
+  },
+];
+
 function BirthdayCarousel() {
   const [birthdayUsers, setBirthdayUsers] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [phase, setPhase] = useState("birthday");
   const CAROUSEL_DURATION_MS = 9000;
-
-  const employees = [
-    {
-      id: 101,
-      name: "Anjali Tomar",
-      dob: "1998-02-25",
-      image: "image1.png",
-    },
-    {
-      id: 102,
-      name: "Rahul Verma",
-      dob: "1998-02-25",
-      image: "image2.png",
-    },
-    {
-      id: 103,
-      name: "Ravi",
-      dob: "1998-02-25",
-      image: "image3.png",
-    },
-  ];
 
   // Get Today's Birthdays
   useEffect(() => {
@@ -35,7 +35,7 @@ function BirthdayCarousel() {
     const todayMonth = today.getMonth();
     const todayDate = today.getDate();
 
-    const todayBirthdays = employees.filter((emp) => {
+    const todayBirthdays = EMPLOYEES.filter((emp) => {
       const dob = new Date(emp.dob);
       return (
         dob.getMonth() === todayMonth &&
