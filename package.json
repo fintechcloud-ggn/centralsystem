@@ -18,7 +18,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "npm run start:backend & npm run start:frontend",
+    "start:frontend": "react-scripts start",
+    "start:backend": "npm --prefix Backend start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

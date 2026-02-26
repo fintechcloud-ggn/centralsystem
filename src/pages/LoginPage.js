@@ -10,7 +10,7 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5001";
 
   useEffect(() => {
     if (isAdminAuthenticated()) {

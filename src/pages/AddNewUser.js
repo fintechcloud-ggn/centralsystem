@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { getAdminToken } from "../components/adminAuth";
 function NewUser() {
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5001";
 
   const [formData, setFormData] = useState({
     employeeId: "",

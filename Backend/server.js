@@ -3,17 +3,63 @@ const mysql = require("mysql2");
 const multer = require("multer");
 const AWS = require("aws-sdk");
 const cors = require("cors");
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-require("dotenv").config();
+const dotenv = require("dotenv");
+const fs = require("fs");
+const path = require("path");
+
+const envCandidates = [
+  path.resolve(__dirname, ".env"),
+  path.resolve(__dirname, "../src/.env"),
+  path.resolve(__dirname, "../.env")
+];
+
+let envLoaded = false;
+for (const envPath of envCandidates) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+    console.log(`Loaded environment from ${envPath}`);
+    envLoaded = true;
+    break;
+  }
+}
+
+if (!envLoaded) {
+  dotenv.config();
+}
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+const requiredEnvVars = [
+  "DB_HOST",
+  "DB_USER",
+  "DB_PASSWORD",
+  "DB_NAME",
+  "AWS_ACCESS_KEY_ID",
+  "AWS_SECRET_ACCESS_KEY",
+  "AWS_REGION",
+  "AWS_S3_BUCKET"
+];
+
+const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
+if (missingEnvVars.length > 0) {
+  console.error(
+    `Missing required environment variables: ${missingEnvVars.join(", ")}`
+  );
+  process.exit(1);
+}
+
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = "dev_jwt_secret_change_me";
+  console.warn("JWT_SECRET not set. Using development fallback secret.");
+}
+
 // MySQL Connection
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME
@@ -70,12 +116,28 @@ const initializeAdminTable = async () => {
     return;
   }
 
-  const passwordHash = await bcrypt.hash(adminPassword, 10);
   await query(
     "INSERT INTO admin_users (email, password_hash) VALUES (?, ?)",
-    [adminEmail, passwordHash]
+    [adminEmail, adminPassword]
   );
   console.log("Default admin user created from environment variables.");
+};
+
+const initializeEmployeesTable = async () => {
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS employees (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      employeeId VARCHAR(100) NOT NULL UNIQUE,
+      name VARCHAR(255) NOT NULL,
+      dob DATE NOT NULL,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      phone VARCHAR(50) NOT NULL,
+      image_url TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  await query(createTableQuery);
 };
 
 const authenticateAdmin = (req, res, next) => {
@@ -120,7 +182,7 @@ app.post("/api/admin/login", async (req, res) => {
     }
 
     const admin = rows[0];
-    const isMatch = await bcrypt.compare(password, admin.password_hash);
+    const isMatch = password === admin.password_hash;
     if (!isMatch) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
@@ -194,13 +256,26 @@ app.post("/api/employees", authenticateAdmin, upload.single("image"), async (req
 
 const PORT = process.env.PORT || 5000;
 
-initializeAdminTable()
+const connectDb = () =>
+  new Promise((resolve, reject) => {
+    db.connect((err) => {
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+
+connectDb()
+  .then(() => {
+    console.log("MySQL connection established.");
+    return initializeAdminTable();
+  })
+  .then(() => initializeEmployeesTable())
   .then(() => {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   })
   .catch((error) => {
-    console.error("Failed to initialize admin table:", error);
+    console.error("Startup failed:", error);
     process.exit(1);
   });
