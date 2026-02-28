@@ -27,7 +27,7 @@ function Carousel() {
       setCurrentIndex((prev) =>
         prev === slides.length - 1 ? 0 : prev + 1
       );
-    }, 60000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [slides.length]);
