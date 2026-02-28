@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { setAdminToken, isAdminAuthenticated } from "../components/adminAuth";
+
 function Login() {
 
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   // const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5001";
-
+const API_BASE_URL = "http://localhost:5001"; // ya 5001 jo tum use kar rahi ho
   useEffect(() => {
     if (isAdminAuthenticated()) {
       navigate("/admin", { replace: true });
@@ -23,7 +24,7 @@ function Login() {
     setError("");
 
     try {
-      const response = await axios.post("/api/admin/login", {
+      const response = await axios.post(`${API_BASE_URL}/api/admin/login`, {
         email,
         password
       });

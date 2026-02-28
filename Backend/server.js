@@ -7,8 +7,6 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const fs = require("fs");
 const path = require("path");
-
-////////
 const serverless = require("serverless-http");
 
 const envCandidates = [
@@ -646,23 +644,19 @@ const connectDb = () =>
 
 
 
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
 
-let isInitialized = false;
 
-const init = async () => {
-  if (isInitialized) return;
+const handler = serverless(app);
 
-  await connectDb();
-  console.log("MySQL connection established.");
-
-  await initializeAdminTable();
-  await initializeEmployeesTable();
-  await seedEmployeesTable();
-
-  isInitialized = true;
-};
-  //new added
 module.exports = async (req, res) => {
   await init();
-  return serverless(app)(req, res);
+  return handler(req, res);
 };
+
+
+
