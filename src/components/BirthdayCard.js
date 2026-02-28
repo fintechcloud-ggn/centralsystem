@@ -5,9 +5,9 @@ import Carousel from "./Carousel";
 const EMPLOYEES = [
   {
     id: 101,
-    name: "Kushal Madhogaria",
-    dob: "1998-02-26",
-    image: "image4.png",
+    name: "Rahul Mishra",
+    dob: "1998-02-28",
+    image: "Rahul Mishra.png",
   },
   {
     id: 102,
@@ -17,9 +17,9 @@ const EMPLOYEES = [
   },
   {
     id: 103,
-    name: "Ravi",
-    dob: "1998-02-26",
-    image: "image3.png",
+    name: "Kusshal Madhogaria",
+    dob: "1998-02-28",
+    image: "image4.png",
   },
 ];
 
@@ -62,7 +62,7 @@ function BirthdayCarousel() {
         }
         return prev + 1;
       });
-    }, 3000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [birthdayUsers, phase]);
