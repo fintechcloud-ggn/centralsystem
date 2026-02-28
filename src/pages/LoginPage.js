@@ -11,7 +11,7 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  // const API_BASE_URL = "http://localhost:5001"; 
+  const API_BASE_URL = "http://localhost:5001"; 
   useEffect(() => {
     if (isAdminAuthenticated()) {
       navigate("/admin", { replace: true });
@@ -22,17 +22,17 @@ function Login() {
     e.preventDefault();
     setError("");
 
-    // try {
-    //   const response = await axios.post(`${API_BASE_URL}/api/admin/login`, {
-    //     email,
-    //     password
-    //   });
-
-       try {
-      const response = await axios.post("/api/admin/login", {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/admin/login`, {
         email,
         password
       });
+
+      //  try {
+      // const response = await axios.post("/api/admin/login", {
+      //   email,
+      //   password
+      // });
 
       setAdminToken(response.data.token);
       toast.success("Login Successful");
