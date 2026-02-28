@@ -79,11 +79,13 @@ function Sidebar({ closeSidebar, collapsed = false }) {
   const linkClassName = ({ isActive }) =>
     `w-full h-11 rounded-xl px-3 text-sm font-medium no-underline transition ${
       collapsed
-        ? "flex items-center justify-center"
+        ? "flex items-center justify-center mr-7"
         : "grid grid-cols-[2.5rem_minmax(0,1fr)] items-center"
     } ${
       isActive
-        ? "bg-white text-blue-950 shadow-sm"
+        ? collapsed
+          ? "text-white"
+          : "bg-white text-blue-950 shadow-sm"
         : "text-blue-100 hover:bg-white/10 hover:text-white"
     }`;
 
@@ -124,6 +126,8 @@ function Sidebar({ closeSidebar, collapsed = false }) {
     }
   ];
 
+  const collapsedItems = [...commonItems, ...employeeItems, ...contestItems];
+
   const renderItem = (item) => (
     <li key={item.label}>
       <NavLink
@@ -140,7 +144,7 @@ function Sidebar({ closeSidebar, collapsed = false }) {
                 isActive
                   ? "bg-blue-900/10 text-blue-900 ring-blue-900/20"
                   : collapsed
-                    ? "bg-white/10 text-white ring-white/30"
+                    ? "bg-white/10 text-white ring-white/10"
                     : "bg-white/5 text-inherit ring-white/10"
               }`}
             >
@@ -175,26 +179,28 @@ function Sidebar({ closeSidebar, collapsed = false }) {
         </div>
       </div>
 
-      {!collapsed && (
-        <p className="mb-0.5 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-300">
-          Dashboard
-        </p>
-      )}
-      <ul className="w-full space-y-0.5">{commonItems.map(renderItem)}</ul>
+      {collapsed ? (
+        <ul className="flex w-full flex-col items-center space-y-0.5">
+          {collapsedItems.map(renderItem)}
+        </ul>
+      ) : (
+        <>
+          <p className="mb-0.5 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-300">
+            Dashboard
+          </p>
+          <ul className="w-full space-y-0.5">{commonItems.map(renderItem)}</ul>
 
-      {!collapsed && (
-        <p className="mb-0.5 mt-3 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-300">
-          Employee Menu
-        </p>
-      )}
-      <ul className="w-full space-y-0.5">{employeeItems.map(renderItem)}</ul>
+          <p className="mb-0.5 mt-3 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-300">
+            Employee Menu
+          </p>
+          <ul className="w-full space-y-0.5">{employeeItems.map(renderItem)}</ul>
 
-      {!collapsed && (
-        <p className="mb-0.5 mt-3 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-300">
-          Contest Menu
-        </p>
+          <p className="mb-0.5 mt-3 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-300">
+            Contest Menu
+          </p>
+          <ul className="w-full space-y-0.5">{contestItems.map(renderItem)}</ul>
+        </>
       )}
-      <ul className="w-full space-y-0.5">{contestItems.map(renderItem)}</ul>
 
       {!collapsed && (
         <div className="mt-6 w-full rounded-xl border border-white/15 bg-white/5 p-4">
