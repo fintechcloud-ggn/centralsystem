@@ -18,7 +18,7 @@ const EMPLOYEES = [
   {
     id: 103,
     name: "Kusshal Madhogaria",
-    dob: "1998-02-28",
+    dob: "1998-02-27",
     image: "image4.png",
   },
 ];
