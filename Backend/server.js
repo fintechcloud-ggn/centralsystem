@@ -8,6 +8,9 @@ const dotenv = require("dotenv");
 const fs = require("fs");
 const path = require("path");
 
+////////
+const serverless = require("serverless-http");
+
 const envCandidates = [
   path.resolve(__dirname, ".env"),
   path.resolve(__dirname, "../src/.env"),
@@ -620,19 +623,46 @@ const connectDb = () =>
     });
   });
 
-connectDb()
-  .then(() => {
-    console.log("MySQL connection established.");
-    return initializeAdminTable();
-  })
-  .then(() => initializeEmployeesTable())
-  .then(() => seedEmployeesTable())
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch((error) => {
-    console.error("Startup failed:", error);
-    process.exit(1);
-  });
+
+  //vercel issues
+// connectDb()
+//   .then(() => {
+//     console.log("MySQL connection established.");
+//     return initializeAdminTable();
+//   })
+//   .then(() => initializeEmployeesTable())
+//   .then(() => seedEmployeesTable())
+//   .then(() => {
+//     app.listen(PORT, () => {
+//       console.log(`Server running on port ${PORT}`);
+//     });
+//   })
+//   .catch((error) => {
+//     console.error("Startup failed:", error);
+//     process.exit(1);
+//   });
+
+
+
+
+
+
+let isInitialized = false;
+
+const init = async () => {
+  if (isInitialized) return;
+
+  await connectDb();
+  console.log("MySQL connection established.");
+
+  await initializeAdminTable();
+  await initializeEmployeesTable();
+  await seedEmployeesTable();
+
+  isInitialized = true;
+};
+
+module.exports = async (req, res) => {
+  await init();
+  return serverless(app)(req, res);
+};
