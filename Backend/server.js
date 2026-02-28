@@ -623,40 +623,40 @@ const connectDb = () =>
 
 
   //vercel issues
-// connectDb()
-//   .then(() => {
-//     console.log("MySQL connection established.");
-//     return initializeAdminTable();
-//   })
-//   .then(() => initializeEmployeesTable())
-//   .then(() => seedEmployeesTable())
-//   .then(() => {
-//     app.listen(PORT, () => {
-//       console.log(`Server running on port ${PORT}`);
-//     });
-//   })
-//   .catch((error) => {
-//     console.error("Startup failed:", error);
-//     process.exit(1);
-//   });
-
-
-
-
-
-if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+connectDb()
+  .then(() => {
+    console.log("MySQL connection established.");
+    return initializeAdminTable();
+  })
+  .then(() => initializeEmployeesTable())
+  .then(() => seedEmployeesTable())
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Startup failed:", error);
+    process.exit(1);
   });
-}
 
 
-const handler = serverless(app);
 
-module.exports = async (req, res) => {
-  await init();
-  return handler(req, res);
-};
+
+
+// if (process.env.NODE_ENV !== "production") {
+//   app.listen(PORT, () => {
+//     console.log(`Server running on port ${PORT}`);
+//   });
+// }
+
+
+// const handler = serverless(app);
+
+// module.exports = async (req, res) => {
+//   await init();
+//   return handler(req, res);
+// };
 
 
 
