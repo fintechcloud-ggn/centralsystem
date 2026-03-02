@@ -16,7 +16,7 @@ function Login() {
   const slides = [
     "Illustration2.png",
     "Illustration3.svg",
-    "Illustration1.svg",
+    "Illustration4.svg",
   ];
 
   // Redirect if already logged in
