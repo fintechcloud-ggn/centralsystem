@@ -76,18 +76,18 @@ function Sidebar({ closeSidebar, collapsed = false }) {
     navigate("/login");
   };
 
-  const linkClassName = ({ isActive }) =>
-    `w-full h-11 rounded-xl px-3 text-sm font-medium no-underline transition ${
-      collapsed
-        ? "flex items-center justify-center mr-7"
-        : "grid grid-cols-[2.5rem_minmax(0,1fr)] items-center"
-    } ${
-      isActive
-        ? collapsed
-          ? "text-white"
-          : "bg-white text-blue-950 shadow-sm"
-        : "text-blue-100 hover:bg-white/10 hover:text-white"
-    }`;
+const linkClassName = ({ isActive }) =>
+  `h-11 rounded-xl text-sm font-medium no-underline transition ${
+    collapsed
+      ? "w-11 flex items-center justify-center mr-7"
+      : "w-full grid grid-cols-[2.5rem_minmax(0,1fr)] items-center px-3"
+  } ${
+    isActive
+      ? collapsed
+        ? "text-white"
+        : "bg-white text-blue-950 shadow-sm"
+      : "text-blue-100 hover:bg-white/10 hover:text-white"
+  }`;
 
   const iconBadgeClass =
     "inline-flex h-9 w-9 items-center justify-center rounded-lg ring-1";
@@ -180,7 +180,7 @@ function Sidebar({ closeSidebar, collapsed = false }) {
       </div>
 
       {collapsed ? (
-        <ul className="flex w-full flex-col items-center space-y-0.5">
+        <ul className="flex flex-col items-center space-y-2">
           {collapsedItems.map(renderItem)}
         </ul>
       ) : (

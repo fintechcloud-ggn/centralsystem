@@ -9,23 +9,41 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [currentSlide, setCurrentSlide] = useState(0);
+
   const API_BASE_URL = "http://localhost:5001";
 
+  const slides = [
+    "Illustration2.png",
+    "Illustration3.svg",
+    "Illustration4.svg",
+  ];
+
+  // Redirect if already logged in
   useEffect(() => {
     if (isAdminAuthenticated()) {
       navigate("/admin", { replace: true });
     }
   }, [navigate]);
 
+  // Auto Slide
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [slides.length]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/admin/login`,
-        { email, password }
-      );
+      const response = await axios.post(`${API_BASE_URL}/api/admin/login`, {
+        email,
+        password,
+      });
 
       setAdminToken(response.data.token);
       toast.success("Login Successful");
@@ -38,88 +56,109 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      
-      {/* LEFT SECTION */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#f4f6fb] items-center justify-center p-10">
-        <div className="max-w-md text-center">
-          <h1 className="text-4xl font-bold text-[#3b49df] mb-6">
-            Admin Panel
-          </h1>
-          <p className="text-gray-600 mb-8">
-            Control your fintech ecosystem with real-time insights and secure administration.
-          </p>
-
-          {/* Illustration Placeholder */}
-          <img
-            src="illustration.svg"
-            alt="illustration"
-            className="w-full"
-          />
-        </div>
-      </div>
-
-      {/* RIGHT SECTION */}
-      <div className="flex flex-1 items-center justify-center bg-[#cfd3f3] px-6 py-10">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
-          
-          <h2 className="text-3xl font-bold text-[#3b49df] mb-2">
-            Sign In
-          </h2>
-          <p className="text-gray-500 mb-8">
-            to your Admin Panel
-          </p>
-
-          <form onSubmit={handleLogin} className="space-y-5">
-
-            {/* Email */}
-            <div>
-              <input
-                type="email"
-                placeholder="Username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-12 px-4 rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#3b49df]"
-                required
-              />
-            </div>
-
-            {/* Password */}
-            <div>
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-12 px-4 rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#3b49df]"
-                required
-              />
-            </div>
-
-            {/* Error */}
-            {error && (
-              <p className="text-red-500 text-sm">{error}</p>
-            )}
-
-            {/* Forgot */}
-            <div className="text-right">
-              <button
-                type="button"
-                className="text-sm text-gray-500 hover:text-[#3b49df]"
+    <div className="min-h-screen bg-[#cfe3d6] flex items-center justify-center p-6">
+      <div className="w-full max-w-6xl bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden flex">
+        {/* LEFT SIDE - CAROUSEL */}
+        <div className="hidden lg:flex w-1/2 bg-[#cfe3d6] items-center justify-center p-14 overflow-hidden">
+          <div className="text-center max-w-md w-full">
+            {/* Carousel */}
+            <div className="relative w-full overflow-hidden">
+              <div
+                className="flex transition-transform duration-700 ease-in-out"
+                style={{
+                  transform: `translateX(-${currentSlide * 100}%)`,
+                }}
               >
-                Forgot password?
-              </button>
+                {slides.map((slide, index) => (
+                  <div
+                    key={index}
+                    className="min-w-full flex items-center justify-center"
+                  >
+                    <img
+                      src={slide}
+                      alt={`slide-${index}`}
+                      className="w-80 pointer-events-none select-none"
+                      draggable="false"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Button */}
-            <button
-              type="submit"
-              className="w-full h-12 bg-[#3b49df] text-white rounded-lg font-semibold hover:bg-[#2f3bc7] transition"
-            >
-              Sign In
-            </button>
+            <h2 className="text-3xl font-semibold text-[#1f2d2a] mt-8 mb-4">
+              Admin Panel
+            </h2>
 
-          </form>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Securely manage and monitor your system with powerful admin
+              controls.
+            </p>
+
+            {/* Dots */}
+            <div className="flex justify-center mt-8 space-x-3">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    index === currentSlide
+                      ? "bg-[#2f5d50] scale-110"
+                      : "bg-gray-300"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT SIDE */}
+        <div className="flex flex-1 items-center justify-center bg-white p-14">
+          <div className="w-full max-w-md">
+            <div className="text-center mb-12">
+              <h1 className="text-4xl font-semibold tracking-wide text-[#1f2d2a]">
+                Fintech <span className="text-[#4a7c59]">Cloud</span>
+              </h1>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">
+                  Username
+                </label>
+                <input
+                  type="email"
+                  placeholder="Username"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full h-12 px-4 rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#4a7c59]"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full h-12 px-4 rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#4a7c59]"
+                  required
+                />
+              </div>
+
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+
+              <button
+                type="submit"
+                className="w-full h-12 bg-gradient-to-r from-[#2f5d50] to-[#1f3d35] text-white rounded-lg font-semibold hover:opacity-90 transition"
+              >
+                Sign In
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>

@@ -192,7 +192,7 @@ const initializeEmployeesTable = async () => {
     CREATE TABLE employee_photos (
       id INT AUTO_INCREMENT PRIMARY KEY,
       employee_code VARCHAR(100) NOT NULL,
-      image_s3_key VARCHAR(1024) NOT NULL UNIQUE,
+      image_s3_key VARCHAR(255) NOT NULL UNIQUE,
       image_url TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_employee_code (employee_code)
@@ -639,24 +639,6 @@ connectDb()
     console.error("Startup failed:", error);
     process.exit(1);
   });
-
-
-
-
-
-// if (process.env.NODE_ENV !== "production") {
-//   app.listen(PORT, () => {
-//     console.log(`Server running on port ${PORT}`);
-//   });
-// }
-
-
-// const handler = serverless(app);
-
-// module.exports = async (req, res) => {
-//   await init();
-//   return handler(req, res);
-// };
 
 
 
