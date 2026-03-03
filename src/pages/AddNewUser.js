@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { getAdminToken } from "../components/adminAuth";
-
+import toast from "react-hot-toast";
 function NewUser() {
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5001";
 
@@ -69,7 +69,7 @@ function NewUser() {
         }
       });
 
-      alert("Employee Created Successfully!");
+      toast.success("Employee created successfully");
       setFormData(initialFormData);
     } catch (error) {
       console.error(error);
@@ -214,7 +214,7 @@ function NewUser() {
             <div>
               <label className="mb-1 block text-sm text-slate-600">Date of Birth (ddmmyy)</label>
               <input
-                type="text"
+                type="date"
                 name="dateOfBirth"
                 required
                 pattern="\\d{6}"
