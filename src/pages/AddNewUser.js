@@ -85,9 +85,9 @@ function NewUser() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5">
-      <div className="rounded-2xl bg-gradient-to-r from-emerald-700 to-cyan-700 p-5 text-white shadow-md md:p-6">
+      <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-cyan-800 p-5 text-white shadow-md md:p-6">
         <h2 className="text-2xl font-bold">Add New Employee</h2>
-        <p className="mt-1 text-sm text-emerald-100">
+        <p className="mt-1 text-sm text-white text-emerald-100">
           Fill all table fields and upload the employee image. Date of birth must be in ddmmyy format.
         </p>
       </div>

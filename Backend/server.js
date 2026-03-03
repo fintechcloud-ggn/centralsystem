@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const fs = require("fs");
 const path = require("path");
-const serverless = require("serverless-http");
+
 
 const envCandidates = [
   path.resolve(__dirname, ".env"),

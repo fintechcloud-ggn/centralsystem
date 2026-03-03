@@ -50,9 +50,9 @@ function DeleteExisting() {
 
   return (
     <section className="mx-auto w-full max-w-6xl space-y-5">
-      <div className="rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-amber-50 p-5 shadow-sm md:p-7">
-        <h2 className="text-2xl font-bold text-slate-900">Delete Employee</h2>
-        <p className="mt-1 text-sm text-slate-600">
+      <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-cyan-800 p-5 shadow-sm md:p-7">
+        <h2 className="text-2xl text-white font-bold text-slate-900">Delete Employee</h2>
+        <p className="mt-1 text-sm text-white text-slate-600">
           Records shown below are live from database. Deletion is permanent.
         </p>
         <input

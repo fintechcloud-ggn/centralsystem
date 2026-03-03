@@ -2,26 +2,27 @@
 import React, { useEffect, useState } from "react";
 import Carousel from "./Carousel";
 
-const EMPLOYEES = [
-  {
-    id: 101,
-    name: "Rahul Mishra",
-    dob: "1998-02-28",
-    image: "Rahul Mishra.png",
-  },
-  {
-    id: 102,
-    name: "Rahul Verma",
-    dob: "1998-02-25",
-    image: "image2.png",
-  },
-  {
-    id: 103,
-    name: "Kusshal Madhogaria",
-    dob: "1998-02-27",
-    image: "image4.png",
-  },
-];
+// const EMPLOYEES = [
+//   {
+//     id: 101,
+//     name: "Rahul Mishra",
+//     dob: "1998-02-28",
+//     image: "Rahul Mishra.png",
+//   },
+//   {
+//     id: 102,
+//     name: "Rahul Verma",
+//     dob: "1998-02-25",
+//     image: "image2.png",
+//   },
+//   {
+//     id: 103,
+//     name: "Kusshal Madhogaria",
+//     dob: "1998-02-27",
+//     image: "image4.png",
+//   },
+// ];
+
 
 function BirthdayCarousel() {
   const [birthdayUsers, setBirthdayUsers] = useState([]);
@@ -29,24 +30,67 @@ function BirthdayCarousel() {
   const [phase, setPhase] = useState("birthday");
   const CAROUSEL_DURATION_MS = 90000;
 
-  // Get Today's Birthdays
+
   useEffect(() => {
-    const today = new Date();
-    const todayMonth = today.getMonth();
-    const todayDate = today.getDate();
+  const fetchEmployees = async () => {
+    try {
+      const token = localStorage.getItem("token");
 
-    const todayBirthdays = EMPLOYEES.filter((emp) => {
-      const dob = new Date(emp.dob);
-      return (
-        dob.getMonth() === todayMonth &&
-        dob.getDate() === todayDate
-      );
-    });
+      const res = await fetch("http://localhost:5001/api/employees", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
 
-    setBirthdayUsers(todayBirthdays);
-    setCurrentIndex(0);
-    setPhase("birthday");
-  }, []);
+      const data = await res.json();
+
+      // Today's Date
+      const today = new Date();
+      const todayMonth = today.getMonth();
+      const todayDate = today.getDate();
+
+      const todayBirthdays = data.filter((emp) => {
+        if (!emp.date_of_birth) return false;
+
+        // DB format is ddmmyy (e.g. 010100)
+        const dobString = emp.date_of_birth;
+
+        const day = parseInt(dobString.substring(0, 2));
+        const month = parseInt(dobString.substring(2, 4)) - 1;
+
+        return month === todayMonth && day === todayDate;
+      });
+
+      setBirthdayUsers(todayBirthdays);
+      setCurrentIndex(0);
+      setPhase("birthday");
+
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+    }
+  };
+
+  fetchEmployees();
+}, []);
+
+  // Get Today's Birthdays
+  // useEffect(() => {
+  //   const today = new Date();
+  //   const todayMonth = today.getMonth();
+  //   const todayDate = today.getDate();
+
+  //   const todayBirthdays = EMPLOYEES.filter((emp) => {
+  //     const dob = new Date(emp.dob);
+  //     return (
+  //       dob.getMonth() === todayMonth &&
+  //       dob.getDate() === todayDate
+  //     );
+  //   });
+
+  //   setBirthdayUsers(todayBirthdays);
+  //   setCurrentIndex(0);
+  //   setPhase("birthday");
+  // }, []);
 
   // Birthday card auto-slide
   useEffect(() => {
@@ -139,8 +183,8 @@ return (
               <div className="w-full md:w-7/12 flex items-center justify-center relative">
                 <div className="w-full max-w-[300px] md:max-w-[340px] border-4 border-[#f6f6f6] p-0">
                   <img
-                    src={user.image}
-                    alt={user.name}
+                    src={user.image_url}
+                    alt={user.employee_name}
                     className="w-full h-[190px] md:h-[280px] object-cover"
                   />
                 </div>

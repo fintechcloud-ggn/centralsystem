@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Contest1 from "./Contest1";
 import Contest2 from "./Contest2";
 import Contest3 from "./Contest3";
+import Contest4 from "./Contest4";
 
 function Carousel() {
   const slides = [
@@ -17,6 +18,10 @@ function Carousel() {
       id: 3,
       component: Contest3,
     },
+    {
+      id: 4,
+      component: Contest4,
+    }
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);

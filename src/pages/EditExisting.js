@@ -132,9 +132,9 @@ function EditExisting() {
 
   return (
     <section className="mx-auto w-full max-w-6xl space-y-5">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
-        <h2 className="text-2xl font-bold text-slate-900">Edit Employee</h2>
-        <p className="mt-1 text-sm text-slate-500">Click Edit to open full employee details in popup.</p>
+      <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-cyan-800 p-5 shadow-sm md:p-7">
+        <h2 className="text-2xl font-bold text-white text-slate-900">Edit Employee</h2>
+        <p className="mt-1 text-sm text-white text-slate-500">Click Edit to open full employee details in popup.</p>
         <div className="mt-4">
           <input
             type="text"

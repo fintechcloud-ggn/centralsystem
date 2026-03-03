@@ -56,8 +56,8 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#cfe3d6] flex items-center justify-center p-6">
-      <div className="w-full max-w-6xl bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden flex">
+    <div className="min-h-screen bg-gradient-to-br from-[#f3f4f6] to-[#dbe7df] flex items-center justify-center p-6">
+      <div className="w-full max-w-5xl h-[550px] mx-auto bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden flex">
         {/* LEFT SIDE - CAROUSEL */}
         <div className="hidden lg:flex w-1/2 bg-[#cfe3d6] items-center justify-center p-14 overflow-hidden">
           <div className="text-center max-w-md w-full">
