@@ -13,12 +13,8 @@ function BirthdayCarousel() {
         const res = await fetch("http://localhost:5001/api/employees");
         const data = await res.json();
 
-        if (!Array.isArray(data)) {
-          console.log("API Error:", data);
-          return;
-        }
+     
 
-        console.log("Full API Data:", data);
 
         const today = new Date();
         const todayDay = today.getDate();
@@ -40,7 +36,6 @@ function BirthdayCarousel() {
         setBirthdayUsers(todayBirthdays);
         setCurrentIndex(0);
         setPhase("birthday");
-        console.log("Filtered Birthdays:", todayBirthdays);
     
       } catch (error) {
         console.error("Error fetching employees:", error);
