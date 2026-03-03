@@ -161,11 +161,11 @@ const initializeAdminTable = async () => {
 };
 
 const initializeEmployeesTable = async () => {
-  await query("DROP TABLE IF EXISTS employee_photos");
-  await query("DROP TABLE IF EXISTS employees");
+  // await query("DROP TABLE IF EXISTS employee_photos");
+  // await query("DROP TABLE IF EXISTS employees");
 
   const createTableQuery = `
-    CREATE TABLE employees (
+    CREATE TABLE if not exists employees (
       id INT AUTO_INCREMENT PRIMARY KEY,
       employee_code VARCHAR(100) NOT NULL UNIQUE,
       employee_name VARCHAR(255) NOT NULL,
@@ -189,7 +189,7 @@ const initializeEmployeesTable = async () => {
   await query(createTableQuery);
 
   const createPhotosTableQuery = `
-    CREATE TABLE employee_photos (
+    CREATE TABLE if not exists employee_photos (
       id INT AUTO_INCREMENT PRIMARY KEY,
       employee_code VARCHAR(100) NOT NULL,
       image_s3_key VARCHAR(255) NOT NULL UNIQUE,
@@ -326,7 +326,7 @@ app.get("/api/admin/verify", authenticateAdmin, (req, res) => {
   return res.json({ valid: true, admin: req.admin });
 });
 
-app.get("/api/employees", authenticateAdmin, async (req, res) => {
+app.get("/api/employees",  async (req, res) => {
   try {
     const rows = await query(
       `SELECT
@@ -628,8 +628,8 @@ connectDb()
     console.log("MySQL connection established.");
     return initializeAdminTable();
   })
-  .then(() => initializeEmployeesTable())
-  .then(() => seedEmployeesTable())
+  // .then(() => initializeEmployeesTable())
+  // .then(() => seedEmployeesTable())
   .then(() => {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
