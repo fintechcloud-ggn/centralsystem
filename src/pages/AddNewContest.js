@@ -4,6 +4,7 @@ import Contest2 from "../components/Contest2";
 import Contest3 from "../components/Contest3";
 import Contest4 from "../components/Contest4";
 import { getAdminToken } from "../components/adminAuth";
+import { buildApiUrl } from "../config/api";
 
 function AddNewContest() {
   const [formData, setFormData] = useState({
@@ -55,7 +56,7 @@ const handleSubmit = async (event) => {
 
     const token = getAdminToken()
     try {
-    const res =  await fetch("http://localhost:5001/api/contests", {
+    const res =  await fetch(buildApiUrl("/api/contests"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

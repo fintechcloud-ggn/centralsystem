@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { getAdminToken } from "../components/adminAuth";
+import { buildApiUrl } from "../config/api";
 
 const initialEditPayload = {
   employeeName: "",
@@ -19,7 +20,6 @@ const initialEditPayload = {
 };
 
 function EditExisting() {
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5001";
   const [records, setRecords] = useState([]);
   const [query, setQuery] = useState("");
   const [editingCode, setEditingCode] = useState("");
@@ -31,11 +31,11 @@ function EditExisting() {
 
   const fetchEmployees = useCallback(async () => {
     const token = getAdminToken();
-    const response = await axios.get(`${API_BASE_URL}/api/employees`, {
+    const response = await axios.get(buildApiUrl("/api/employees"), {
       headers: token ? { Authorization: `Bearer ${token}` } : {}
     });
     setRecords(response.data || []);
-  }, [API_BASE_URL]);
+  }, []);
 
   useEffect(() => {
     fetchEmployees().catch((error) => console.error(error));
@@ -80,7 +80,7 @@ function EditExisting() {
 
   const fetchEmployeePhotos = async (employeeCode) => {
     const token = getAdminToken();
-    const response = await axios.get(`${API_BASE_URL}/api/employees/${employeeCode}/photos`, {
+    const response = await axios.get(buildApiUrl(`/api/employees/${employeeCode}/photos`), {
       headers: token ? { Authorization: `Bearer ${token}` } : {}
     });
     setPhotoOptions(response.data || []);
@@ -93,7 +93,7 @@ function EditExisting() {
       const token = getAdminToken();
       const data = new FormData();
       data.append("image", photoFile);
-      const response = await axios.post(`${API_BASE_URL}/api/employees/${editingCode}/photos`, data, {
+      const response = await axios.post(buildApiUrl(`/api/employees/${editingCode}/photos`), data, {
         headers: {
           "Content-Type": "multipart/form-data",
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -117,7 +117,7 @@ function EditExisting() {
     try {
       setIsSaving(true);
       const token = getAdminToken();
-      await axios.put(`${API_BASE_URL}/api/employees/${editingCode}`, editPayload, {
+      await axios.put(buildApiUrl(`/api/employees/${editingCode}`), editPayload, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       await fetchEmployees();

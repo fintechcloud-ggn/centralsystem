@@ -2,9 +2,8 @@ import React, { useState } from "react";
 import axios from "axios";
 import { getAdminToken } from "../components/adminAuth";
 import toast from "react-hot-toast";
+import { buildApiUrl } from "../config/api";
 function NewUser() {
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5001";
-
   const initialFormData = {
     employeeCode: "",
     employeeName: "",
@@ -62,7 +61,7 @@ function NewUser() {
     }
 
     try {
-      await axios.post(`${API_BASE_URL}/api/employees`, data, {
+      await axios.post(buildApiUrl("/api/employees"), data, {
         headers: {
           "Content-Type": "multipart/form-data",
           ...(token ? { Authorization: `Bearer ${token}` } : {})
