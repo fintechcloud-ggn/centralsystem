@@ -5,69 +5,65 @@ import Contest3 from "./Contest3";
 import Contest4 from "./Contest4";
 
 function Carousel() {
-  const slides = [
-    {
-      id: 1,
-      component: Contest1,
-    },
-    {
-      id: 2,
-      component: Contest2,
-    },
-    {
-      id: 3,
-      component: Contest3,
-    },
-    {
-      id: 4,
-      component: Contest4,
-    }
-  ];
-
+  const [contests, setContests] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Auto-slide
+  useEffect(() => {
+    fetch("http://localhost:5001/api/contests")
+      .then((res) => res.json())
+      .then((data) => {
+        //Do not show contest after end date
+        const activeContests = data.filter(
+          (contest) => new Date(contest.ends_on) >= new Date(),
+        );
+
+        setContests(activeContests);
+      })
+      .catch((err) => console.log(err));
+  }, []);
+
+  // auto slide
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex((prev) =>
-        prev === slides.length - 1 ? 0 : prev + 1
-      );
+      setCurrentIndex((prev) => (prev === contests.length - 1 ? 0 : prev + 1));
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [slides.length]);
+  }, [contests.length]);
+
+  const getComponent = (design) => {
+    if (design === "contest1") return Contest1;
+    if (design === "contest2") return Contest2;
+    if (design === "contest3") return Contest3;
+    if (design === "contest4") return Contest4;
+    return Contest1;
+  };
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden">
-
-      {/* Slides Container */}
       <div
-        className="flex h-full transition-transform duration-700 ease-in-out"
+        className="flex h-full transition-transform duration-700"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
-        {slides.map((slide) => {
-          const SlideComponent = slide.component;
+        {contests.map((contest) => {
+          const SlideComponent = getComponent(contest.design_type);
+
           return (
-            <div
-              key={slide.id}
-              className="w-full h-[100dvh] flex-shrink-0 relative"
-            >
-              <SlideComponent />
+            <div key={contest.id} className="w-full h-[100dvh] flex-shrink-0">
+              <SlideComponent previewData={contest} />
             </div>
           );
         })}
       </div>
 
-      {/* Dots */}
+      {/* dots */}
       <div className="absolute bottom-6 w-full flex justify-center space-x-3">
-        {slides.map((_, index) => (
+        {contests.map((_, index) => (
           <div
             key={index}
             onClick={() => setCurrentIndex(index)}
-            className={`w-3 h-3 md:w-4 md:h-4 rounded-full cursor-pointer transition-all duration-300 ${
-              currentIndex === index
-                ? "bg-white scale-125"
-                : "bg-white/50"
+            className={`w-3 h-3 rounded-full cursor-pointer ${
+              currentIndex === index ? "bg-white scale-125" : "bg-white/50"
             }`}
           />
         ))}

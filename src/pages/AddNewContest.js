@@ -1,4 +1,9 @@
 import { useState } from "react";
+import Contest1 from "../components/Contest1";
+import Contest2 from "../components/Contest2";
+import Contest3 from "../components/Contest3";
+import Contest4 from "../components/Contest4";
+import { getAdminToken } from "../components/adminAuth";
 
 function AddNewContest() {
   const [formData, setFormData] = useState({
@@ -7,7 +12,17 @@ function AddNewContest() {
     startsOn: "",
     endsOn: "",
     prize: "",
-    description: ""
+    description: "",
+    designType:"contest1",
+
+     firstPlace: "",
+      firstPoints: "",
+
+    secondPlace: "",
+     secondPoints: "",
+
+    thirdPlace: "",
+    thirdPoints: ""
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -17,33 +32,82 @@ function AddNewContest() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (event) => {
+  //Preview renderer
+  const renderPreview = () => {
+  switch (formData.designType) {
+    case "contest1":
+      return <Contest1 previewData={formData} />;
+    case "contest2":
+      return <Contest2 previewData={formData} />;
+    case "contest3":
+      return <Contest3 previewData={formData} />;
+    case "contest4":
+      return <Contest4 previewData={formData} />;
+    default:
+      return null;
+  }
+};
+
+// handle submit
+const handleSubmit = async (event) => {
     event.preventDefault();
     setIsSaving(true);
-    setTimeout(() => {
+
+    const token = getAdminToken()
+    try {
+    const res =  await fetch("http://localhost:5001/api/contests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+       const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to create contest");
+    }
+
       alert("Contest created successfully!");
+
       setFormData({
         title: "",
         category: "Photography",
         startsOn: "",
         endsOn: "",
         prize: "",
-        description: ""
+        description: "",
+        designType: "contest1",
+         firstPlace: "",
+      secondPlace: "",
+      thirdPlace: ""
       });
-      setIsSaving(false);
-    }, 650);
+    } catch (error) {
+      console.error(error);
+      alert("Error creating contest");
+    }
+
+    setIsSaving(false);
   };
 
-  return (
+ return (
     <section className="mx-auto w-full max-w-5xl">
       <div className="grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
+        
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
           <h2 className="text-2xl font-bold text-slate-900">Add New Contest</h2>
-          <p className="mt-1 text-sm text-slate-500">Set up a contest and publish it for employee participation.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            Set up a contest and publish it for employee participation.
+          </p>
 
           <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+            
             <div>
-              <label className="mb-1 block text-sm text-slate-600">Contest Title</label>
+              <label className="mb-1 block text-sm text-slate-600">
+                Contest Title
+              </label>
               <input
                 type="text"
                 name="title"
@@ -56,8 +120,11 @@ function AddNewContest() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
+              
               <div>
-                <label className="mb-1 block text-sm text-slate-600">Category</label>
+                <label className="mb-1 block text-sm text-slate-600">
+                  Category
+                </label>
                 <select
                   name="category"
                   value={formData.category}
@@ -70,22 +137,46 @@ function AddNewContest() {
                   <option>Sports</option>
                 </select>
               </div>
+
               <div>
-                <label className="mb-1 block text-sm text-slate-600">Prize</label>
-                <input
-                  type="text"
-                  name="prize"
-                  value={formData.prize}
+                <label className="mb-1 block text-sm text-slate-600">
+                  Contest Design
+                </label>
+                <select
+                  name="designType"
+                  value={formData.designType}
                   onChange={handleChange}
-                  placeholder="$500 + Certificate"
                   className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                />
+                >
+                  <option value="contest1">Contest One</option>
+                  <option value="contest2">Contest Two</option>
+                  <option value="contest3">Contest Three</option>
+                  <option value="contest4">Contest Four</option>
+                </select>
               </div>
+
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm text-slate-600">
+                Prize
+              </label>
+              <input
+                type="text"
+                name="prize"
+                value={formData.prize}
+                onChange={handleChange}
+                placeholder="$500 + Certificate"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
+              
               <div>
-                <label className="mb-1 block text-sm text-slate-600">Start Date</label>
+                <label className="mb-1 block text-sm text-slate-600">
+                  Start Date
+                </label>
                 <input
                   type="date"
                   name="startsOn"
@@ -95,8 +186,11 @@ function AddNewContest() {
                   className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
+
               <div>
-                <label className="mb-1 block text-sm text-slate-600">End Date</label>
+                <label className="mb-1 block text-sm text-slate-600">
+                  End Date
+                </label>
                 <input
                   type="date"
                   name="endsOn"
@@ -106,10 +200,13 @@ function AddNewContest() {
                   className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
+
             </div>
 
             <div>
-              <label className="mb-1 block text-sm text-slate-600">Description</label>
+              <label className="mb-1 block text-sm text-slate-600">
+                Description
+              </label>
               <textarea
                 name="description"
                 value={formData.description}
@@ -120,6 +217,78 @@ function AddNewContest() {
               />
             </div>
 
+
+
+            {/* top 3 winners */}
+<div className="grid gap-3">
+
+  {/* First */}
+  <div className="flex gap-2">
+    <input
+      type="text"
+      name="firstPlace"
+      value={formData.firstPlace}
+      onChange={handleChange}
+      placeholder="🥇 First Place Winner"
+      className="w-full rounded-md border px-3 py-2"
+    />
+    <input
+      type="number"
+      name="firstPoints"
+      value={formData.firstPoints}
+      onChange={handleChange}
+      placeholder="Points"
+      className="w-28 rounded-md border px-3 py-2"
+    />
+  </div>
+
+  {/* Second */}
+  <div className="flex gap-2">
+    <input
+      type="text"
+      name="secondPlace"
+      value={formData.secondPlace}
+      onChange={handleChange}
+      placeholder="🥈 Second Place Winner"
+      className="w-full rounded-md border px-3 py-2"
+    />
+    <input
+      type="number"
+      name="secondPoints"
+      value={formData.secondPoints}
+      onChange={handleChange}
+      placeholder="Points"
+      className="w-28 rounded-md border px-3 py-2"
+    />
+  </div>
+
+  {/* Third */}
+  <div className="flex gap-2">
+    <input
+      type="text"
+      name="thirdPlace"
+      value={formData.thirdPlace}
+      onChange={handleChange}
+      placeholder="🥉 Third Place Winner"
+      className="w-full rounded-md border px-3 py-2"
+    />
+    <input
+      type="number"
+      name="thirdPoints"
+      value={formData.thirdPoints}
+      onChange={handleChange}
+      placeholder="Points"
+      className="w-28 rounded-md border px-3 py-2"
+    />
+  </div>
+
+</div>
+
+
+
+
+
+
             <button
               type="submit"
               disabled={isSaving}
@@ -127,21 +296,32 @@ function AddNewContest() {
             >
               {isSaving ? "Saving..." : "Publish Contest"}
             </button>
+
           </form>
         </div>
 
         <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
           <h3 className="text-lg font-semibold text-slate-900">Preview</h3>
-          <div className="mt-4 rounded-xl bg-slate-900 p-4 text-white">
-            <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">{formData.category}</p>
-            <p className="mt-2 text-xl font-semibold">{formData.title || "Contest title"}</p>
-            <p className="mt-2 text-sm text-slate-300">{formData.description || "Contest description will appear here."}</p>
-          </div>
+
+<div className="mt-4 w-[260px] h-[180px] bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center">
+  <div className="scale-[0.26] origin-center">
+    <div className="w-[1000px] h-[700px]">
+      {renderPreview()}
+    </div>
+  </div>
+</div>
           <div className="mt-4 space-y-2 text-sm text-slate-600">
             <p>Starts: {formData.startsOn || "Not selected"}</p>
             <p>Ends: {formData.endsOn || "Not selected"}</p>
             <p>Prize: {formData.prize || "Not specified"}</p>
+            <p>Design: {formData.designType}</p>
+
+
+              <p>🥇 {formData.firstPlace || "-"}</p>
+            <p>🥈 {formData.secondPlace || "-"}</p>
+            <p>🥉 {formData.thirdPlace || "-"}</p>
           </div>
+
         </aside>
       </div>
     </section>

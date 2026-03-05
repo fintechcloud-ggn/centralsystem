@@ -1,27 +1,27 @@
 import React from "react";
 
-function Contest2() {
+function Contest2({ previewData }) {
   const leaders = [
     {
       rank: 1,
-      name: "Ishita Sharma",
-      points: 12680,
-      uploads: 38,
-      badge: "Top Shot",
+      name: previewData?.first_place || "Winner 1",
+      points: previewData?.first_points || 0,
+      uploads: previewData?.first_entries || 0,
+      badge: "Winner",
     },
     {
       rank: 2,
-      name: "Kabir Mehta",
-      points: 11940,
-      uploads: 34,
-      badge: "Fast Climber",
+      name: previewData?.second_place || "Winner 2",
+      points: previewData?.second_points || 0,
+      uploads: previewData?.second_entries || 0,
+      badge: "Runner Up",
     },
     {
       rank: 3,
-      name: "Rhea Arora",
-      points: 11210,
-      uploads: 31,
-      badge: "Creative Eye",
+      name: previewData?.third_place || "Winner 3",
+      points: previewData?.third_points || 0,
+      uploads: previewData?.third_entries || 0,
+      badge: "Runner Up",
     },
   ];
 
@@ -35,7 +35,7 @@ function Contest2() {
 
             <div className="mx-auto text-center">
               <h2 className="text-[#f2643a] text-4xl md:text-6xl font-black uppercase tracking-wide leading-none">
-                Photography
+                {previewData?.title || "Photography"}
               </h2>
               <h1 className="mt-1 text-black text-5xl md:text-7xl font-black uppercase leading-none">
                 Contest
@@ -43,21 +43,18 @@ function Contest2() {
             </div>
 
             <p className="mt-8 text-center text-[#f2643a] text-2xl md:text-4xl font-extrabold leading-tight">
-              Take part in this contest for
-              <br />
-              a chance to win a brand new
-              <br />
-              camera equipment set!
+              {previewData?.description ||
+                "Join the Challenge & Show Your Talent!"}
             </p>
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-end">
               <div className="md:col-span-2">
                 <p className="text-[#8f7fbe] text-xl md:text-3xl font-extrabold leading-tight">
-                  Simply upload your
+                  Join the contest
                   <br />
-                  best vacation photo
+                  submit your best entry
                   <br />
-                  to reallygreatsite.com
+                  and become the winner!
                 </p>
                 <div className="mt-3 w-full h-[2px] bg-[#d9cc67]" />
                 <p className="mt-3 text-[#4f4a44] text-sm md:text-lg">
@@ -69,30 +66,33 @@ function Contest2() {
                 <span className="text-[10px] md:text-xs uppercase font-semibold tracking-wide">
                   Submit before
                 </span>
-                <span className="text-4xl md:text-5xl font-black leading-none">15</span>
-                <span className="text-2xl md:text-3xl font-black leading-none">Sept</span>
+                <span className="text-4xl md:text-5xl font-black leading-none">
+                  {previewData?.ends_on || "15"}
+                </span>
               </div>
             </div>
 
             <div className="mt-auto pt-6 border-t-2 border-[#ded4c6] flex items-center justify-between text-[#221f1d]">
               <div className="font-black uppercase text-sm md:text-base">
-                Studio
+                Talent
                 <br />
-                Showde
+                Showcase
               </div>
               <div className="text-xs md:text-sm font-semibold text-right">
-                +123-456-7890 | www.reallygreatsite.com
+                +123-123-1234| www.FintechCloud.com
                 <br />
-                123 Anywhere St., Any City, ST 12345
+                Register now and join the contest.
               </div>
             </div>
           </section>
 
           <section className="rounded-2xl bg-[#f8f6fc] border-2 border-[#ded9eb] p-4 md:p-6 flex flex-col">
             <div className="flex items-center justify-between">
-              <h3 className="text-[#351c55] text-3xl md:text-5xl font-black uppercase">Top 3</h3>
+              <h3 className="text-[#351c55] text-3xl md:text-5xl font-black uppercase">
+                Top 3
+              </h3>
               <span className="px-3 py-1 rounded-full bg-[#5f3c95] text-white text-xs md:text-sm font-bold">
-                Manual Data
+                Live Contest
               </span>
             </div>
 
@@ -113,22 +113,28 @@ function Contest2() {
                           item.rank === 1
                             ? "bg-[#f0c65d] text-[#40310b]"
                             : item.rank === 2
-                            ? "bg-[#a1a7b8] text-white"
-                            : "bg-[#c78c63] text-white"
+                              ? "bg-[#a1a7b8] text-white"
+                              : "bg-[#c78c63] text-white"
                         }`}
                       >
                         {item.rank}
                       </div>
                       <div>
-                        <p className="text-[#221c2f] text-lg md:text-2xl font-bold">{item.name}</p>
+                        <p className="text-[#221c2f] text-lg md:text-2xl font-bold">
+                          {item.name}
+                        </p>
                         <p className="text-[#6a5a82] text-xs md:text-sm">
                           Uploads: {item.uploads} | {item.badge}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-[#5f3c95] text-xl md:text-3xl font-black">{item.points}</p>
-                      <p className="text-[#6a5a82] text-xs md:text-sm uppercase font-semibold">points</p>
+                      <p className="text-[#5f3c95] text-xl md:text-3xl font-black">
+                        {item.points}
+                      </p>
+                      <p className="text-[#6a5a82] text-xs md:text-sm uppercase font-semibold">
+                        points
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -137,8 +143,12 @@ function Contest2() {
 
             <div className="mt-auto pt-4">
               <div className="rounded-xl bg-[#351c55] text-white px-4 py-3 flex items-center justify-between">
-                <span className="text-sm md:text-base font-semibold">Next Update</span>
-                <span className="text-[#f2d05e] text-sm md:text-base font-bold">09:00 PM</span>
+                <span className="text-sm md:text-base font-semibold">
+                  Next Update
+                </span>
+                <span className="text-[#f2d05e] text-sm md:text-base font-bold">
+                  09:00 PM
+                </span>
               </div>
             </div>
           </section>

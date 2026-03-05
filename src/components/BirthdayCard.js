@@ -13,9 +13,6 @@ function BirthdayCarousel() {
         const res = await fetch("http://localhost:5001/api/employees");
         const data = await res.json();
 
-     
-
-
         const today = new Date();
         const todayDay = today.getDate();
         const todayMonth = today.getMonth() + 1; 

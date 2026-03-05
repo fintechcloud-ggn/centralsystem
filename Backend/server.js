@@ -621,13 +621,152 @@ const connectDb = () =>
     });
   });
 
+//Contest Table 
+const initializeContestsTable = async () => {
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS contests (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      category VARCHAR(100),
+      description TEXT,
+      prize VARCHAR(255),
+      starts_on DATE,
+      ends_on DATE,
+      design_type VARCHAR(50),
+        first_place VARCHAR(255),
+        first_points INT DEFAULT 0,
+    second_place VARCHAR(255),
+    second_points INT DEFAULT 0,
+    third_place VARCHAR(255),
+    third_points INT DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
 
-  //vercel issues
+  await query(createTableQuery);
+};
+
+//Contest api
+app.post("/api/contests", authenticateAdmin, async (req, res) => {
+  try {
+
+    const {
+      title,
+      category,
+      description,
+      prize,
+      startsOn,
+      endsOn,
+      designType,
+      firstPlace,
+      firstPoints,
+      secondPlace,
+      secondPoints,
+      thirdPlace,
+      thirdPoints
+    } = req.body;
+
+    // validation
+    if (!title || !startsOn || !endsOn) {
+      return res.status(400).json({
+        error: "Title, start date and end date are required"
+      });
+    }
+
+    const sql = `
+      INSERT INTO contests
+      (
+        title,
+        category,
+        description,
+        prize,
+        starts_on,
+        ends_on,
+        design_type,
+        first_place,
+        first_points,
+        second_place,
+        second_points,
+        third_place,
+        third_points
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?)
+    `;
+
+    const values = [
+      title.trim(),
+      category || "",
+      description || "",
+      prize || "",
+      startsOn,
+      endsOn,
+      designType || "contest1",
+      firstPlace || "",
+       firstPoints || 0,
+
+      secondPlace || "",
+       secondPoints || 0,
+      thirdPlace || "",
+       thirdPoints || 0
+    ];
+
+    const result = await query(sql, values);
+
+    res.status(201).json({
+      message: "Contest created successfully",
+      contestId: result.insertId
+    });
+
+  } catch (error) {
+    console.error("Contest Create Error:", error);
+    res.status(500).json({
+      error: "Contest creation failed",
+      details: error.message
+    });
+  }
+});
+
+
+//Carousel contest
+
+app.get("/api/contests", async (req, res) => {
+  try {
+    const rows = await query(`
+      SELECT
+        id,
+        title,
+        category,
+        description,
+        prize,
+        starts_on,
+        ends_on,
+        design_type,
+         first_place,
+         first_points,
+  second_place,
+  second_points,
+  third_place,
+   third_points
+      FROM contests
+      ORDER BY created_at DESC
+    `);
+
+    res.json(rows);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
+
+
+//connections
 connectDb()
   .then(() => {
     console.log("MySQL connection established.");
     return initializeAdminTable();
   })
+   .then(() => initializeContestsTable())
   // .then(() => initializeEmployeesTable())
   // .then(() => seedEmployeesTable())
   .then(() => {
