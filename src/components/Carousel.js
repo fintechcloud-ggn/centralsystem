@@ -3,7 +3,7 @@ import Contest1 from "./Contest1";
 import Contest2 from "./Contest2";
 import Contest3 from "./Contest3";
 import Contest4 from "./Contest4";
-import { buildApiUrl } from "../config/api";
+import { fetchJson } from "../config/api";
 
 function Carousel() {
   const [contests, setContests] = useState([]);
@@ -12,13 +12,7 @@ function Carousel() {
   const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    fetch(buildApiUrl("/api/contests"))
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Failed to load contests (${res.status})`);
-        }
-        return res.json();
-      })
+    fetchJson("/api/contests")
       .then((data) => {
         const contestsData = Array.isArray(data) ? data : [];
         //Do not show contest after end date
@@ -31,7 +25,7 @@ function Carousel() {
       })
       .catch((err) => {
         console.error(err);
-        setLoadError("Unable to load contests.");
+        setLoadError("Unable to load contests. API is not returning JSON.");
       })
       .finally(() => setIsLoading(false));
   }, []);

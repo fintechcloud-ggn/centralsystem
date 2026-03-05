@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Carousel from "./Carousel";
-import { buildApiUrl } from "../config/api";
+import { fetchJson } from "../config/api";
 
 function BirthdayCarousel() {
   const [birthdayUsers, setBirthdayUsers] = useState([]);
@@ -11,8 +11,7 @@ function BirthdayCarousel() {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const res = await fetch(buildApiUrl("/api/employees"));
-        const data = await res.json();
+        const data = await fetchJson("/api/employees");
 
         const today = new Date();
         const todayDay = today.getDate();
