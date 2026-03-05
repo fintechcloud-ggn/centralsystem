@@ -8,19 +8,32 @@ import { buildApiUrl } from "../config/api";
 function Carousel() {
   const [contests, setContests] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     fetch(buildApiUrl("/api/contests"))
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to load contests (${res.status})`);
+        }
+        return res.json();
+      })
       .then((data) => {
+        const contestsData = Array.isArray(data) ? data : [];
         //Do not show contest after end date
-        const activeContests = data.filter(
+        const activeContests = contestsData.filter(
           (contest) => new Date(contest.ends_on) >= new Date(),
         );
 
         setContests(activeContests);
+        setLoadError("");
       })
-      .catch((err) => console.log(err));
+      .catch((err) => {
+        console.error(err);
+        setLoadError("Unable to load contests.");
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   // auto slide
@@ -39,6 +52,22 @@ function Carousel() {
     if (design === "contest4") return Contest4;
     return Contest1;
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[100dvh] items-center justify-center bg-slate-100 text-slate-700">
+        Loading contests...
+      </div>
+    );
+  }
+
+  if (loadError || contests.length === 0) {
+    return (
+      <div className="flex h-[100dvh] items-center justify-center bg-slate-100 px-6 text-center text-slate-700">
+        {loadError || "No active contests available right now."}
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden">
