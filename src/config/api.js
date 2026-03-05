@@ -15,8 +15,17 @@ export const buildApiUrl = (path) => {
   return `${API_BASE_URL}${normalizedPath}`;
 };
 
-export const fetchJson = async (path, init) => {
-  const response = await fetch(buildApiUrl(path), init);
+export const fetchJson = async (path, init = {}) => {
+  const headers = new Headers(init.headers || {});
+  if (!headers.has("Accept")) {
+    headers.set("Accept", "application/json");
+  }
+
+  const response = await fetch(buildApiUrl(path), {
+    ...init,
+    cache: init.cache || "no-store",
+    headers
+  });
 
   if (!response.ok) {
     throw new Error(`Request failed (${response.status})`);
@@ -24,7 +33,11 @@ export const fetchJson = async (path, init) => {
 
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.toLowerCase().includes("application/json")) {
-    throw new Error("Expected JSON response but received non-JSON content.");
+    const bodyPreview = (await response.text()).replace(/\s+/g, " ").trim().slice(0, 200);
+    throw new Error(
+      `Expected JSON response but received non-JSON content. ` +
+      `status=${response.status}, content-type="${contentType}", preview="${bodyPreview}"`
+    );
   }
 
   return response.json();
