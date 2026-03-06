@@ -32,6 +32,9 @@ if (!envLoaded) {
 const app = express();
 app.use(cors());
 app.use(express.json());
+const DB_CONNECT_TIMEOUT_MS = Number(process.env.DB_CONNECT_TIMEOUT_MS || 10000);
+const DB_QUERY_TIMEOUT_MS = Number(process.env.DB_QUERY_TIMEOUT_MS || 15000);
+const BOOTSTRAP_TIMEOUT_MS = Number(process.env.BOOTSTRAP_TIMEOUT_MS || 20000);
 
 const requiredStartupEnvVars = [
   "DB_HOST",
@@ -61,7 +64,8 @@ const db = mysql.createConnection({
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
+  database: process.env.DB_NAME,
+  connectTimeout: DB_CONNECT_TIMEOUT_MS
 });
 
 // AWS S3 Config
@@ -94,7 +98,7 @@ const upload = multer({
 
 const query = (sql, values = []) =>
   new Promise((resolve, reject) => {
-    db.query(sql, values, (err, rows) => {
+    db.query({ sql, timeout: DB_QUERY_TIMEOUT_MS }, values, (err, rows) => {
       if (err) return reject(err);
       resolve(rows);
     });
@@ -631,7 +635,12 @@ const PORT = process.env.PORT || 5000;
 
 const connectDb = () =>
   new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error(`Database connection timed out after ${DB_CONNECT_TIMEOUT_MS}ms`));
+    }, DB_CONNECT_TIMEOUT_MS + 1000);
+
     db.connect((err) => {
+      clearTimeout(timeout);
       if (err) return reject(err);
       resolve();
     });
@@ -780,18 +789,25 @@ let bootstrapPromise;
 
 const bootstrap = () => {
   if (!bootstrapPromise) {
-    bootstrapPromise = connectDb()
-      .then(() => {
-        console.log("MySQL connection established.");
-        return initializeAdminTable();
-      })
-      .then(() => initializeContestsTable())
-      // .then(() => initializeEmployeesTable())
-      // .then(() => seedEmployeesTable())
-      .catch((error) => {
-        bootstrapPromise = undefined;
-        throw error;
-      });
+    bootstrapPromise = Promise.race([
+      connectDb()
+        .then(() => {
+          console.log("MySQL connection established.");
+          return initializeAdminTable();
+        })
+        .then(() => initializeContestsTable())
+        // .then(() => initializeEmployeesTable())
+        // .then(() => seedEmployeesTable()),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`Backend bootstrap timed out after ${BOOTSTRAP_TIMEOUT_MS}ms`)),
+          BOOTSTRAP_TIMEOUT_MS
+        )
+      )
+    ]).catch((error) => {
+      bootstrapPromise = undefined;
+      throw error;
+    });
   }
 
   return bootstrapPromise;

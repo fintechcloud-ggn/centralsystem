@@ -21,14 +21,54 @@ export const fetchJson = async (path, init = {}) => {
     headers.set("Accept", "application/json");
   }
 
-  const response = await fetch(buildApiUrl(path), {
-    ...init,
-    cache: init.cache || "no-store",
-    headers
-  });
+  const timeoutMs = init.timeoutMs || 15000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  if (init.signal) {
+    if (init.signal.aborted) {
+      controller.abort();
+    } else {
+      init.signal.addEventListener("abort", () => controller.abort(), { once: true });
+    }
+  }
+
+  let response;
+  try {
+    response = await fetch(buildApiUrl(path), {
+      ...init,
+      cache: init.cache || "no-store",
+      headers,
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error(`Request timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
-    throw new Error(`Request failed (${response.status})`);
+    const contentType = response.headers.get("content-type") || "";
+    let details = "";
+
+    try {
+      if (contentType.toLowerCase().includes("application/json")) {
+        const json = await response.json();
+        details = json?.details || json?.error || JSON.stringify(json);
+      } else {
+        details = (await response.text()).replace(/\s+/g, " ").trim().slice(0, 200);
+      }
+    } catch (parseError) {
+      details = "Unable to parse error response body.";
+    }
+
+    throw new Error(
+      `Request failed (${response.status})` +
+      (details ? `: ${details}` : "")
+    );
   }
 
   const contentType = response.headers.get("content-type") || "";
