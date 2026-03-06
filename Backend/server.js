@@ -46,9 +46,11 @@ const requiredEnvVars = [
 
 const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
 if (missingEnvVars.length > 0) {
-  console.error(
-    `Missing required environment variables: ${missingEnvVars.join(", ")}`
-  );
+  const message = `Missing required environment variables: ${missingEnvVars.join(", ")}`;
+  if (require.main !== module) {
+    throw new Error(message);
+  }
+  console.error(message);
   process.exit(1);
 }
 
@@ -760,24 +762,39 @@ app.get("/api/contests", async (req, res) => {
 });
 
 
-//connections
-connectDb()
-  .then(() => {
-    console.log("MySQL connection established.");
-    return initializeAdminTable();
-  })
-   .then(() => initializeContestsTable())
-  // .then(() => initializeEmployeesTable())
-  // .then(() => seedEmployeesTable())
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+let bootstrapPromise;
+
+const bootstrap = () => {
+  if (!bootstrapPromise) {
+    bootstrapPromise = connectDb()
+      .then(() => {
+        console.log("MySQL connection established.");
+        return initializeAdminTable();
+      })
+      .then(() => initializeContestsTable())
+      // .then(() => initializeEmployeesTable())
+      // .then(() => seedEmployeesTable())
+      .catch((error) => {
+        bootstrapPromise = undefined;
+        throw error;
+      });
+  }
+
+  return bootstrapPromise;
+};
+
+if (require.main === module) {
+  bootstrap()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
+    })
+    .catch((error) => {
+      console.error("Startup failed:", error);
+      process.exit(1);
     });
-  })
-  .catch((error) => {
-    console.error("Startup failed:", error);
-    process.exit(1);
-  });
+}
 
-
+module.exports = { app, bootstrap };
 
