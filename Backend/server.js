@@ -33,20 +33,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const requiredEnvVars = [
+const requiredStartupEnvVars = [
   "DB_HOST",
   "DB_USER",
   "DB_PASSWORD",
   "DB_NAME",
-  "AWS_ACCESS_KEY_ID",
-  "AWS_SECRET_ACCESS_KEY",
-  "AWS_REGION",
-  "AWS_S3_BUCKET"
 ];
 
-const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
-if (missingEnvVars.length > 0) {
-  const message = `Missing required environment variables: ${missingEnvVars.join(", ")}`;
+const missingStartupEnvVars = requiredStartupEnvVars.filter((name) => !process.env[name]);
+if (missingStartupEnvVars.length > 0) {
+  const message = `Missing required startup environment variables: ${missingStartupEnvVars.join(", ")}`;
   if (require.main !== module) {
     throw new Error(message);
   }
@@ -76,6 +72,20 @@ AWS.config.update({
 });
 
 const s3 = new AWS.S3();
+const requireAwsEnv = () => {
+  const requiredAwsEnvVars = [
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_REGION",
+    "AWS_S3_BUCKET"
+  ];
+  const missingAwsEnvVars = requiredAwsEnvVars.filter((name) => !process.env[name]);
+  if (missingAwsEnvVars.length > 0) {
+    throw new Error(
+      `Missing required AWS environment variables: ${missingAwsEnvVars.join(", ")}`
+    );
+  }
+};
 
 // Multer Setup
 const upload = multer({
@@ -363,6 +373,8 @@ app.get("/api/employees",  async (req, res) => {
 // API Route
 app.post("/api/employees", authenticateAdmin, upload.single("image"), async (req, res) => {
   try {
+    requireAwsEnv();
+
     const {
       employeeId,
       name,
@@ -554,6 +566,8 @@ app.get("/api/employees/:employeeCode/photos", authenticateAdmin, async (req, re
 
 app.post("/api/employees/:employeeCode/photos", authenticateAdmin, upload.single("image"), async (req, res) => {
   try {
+    requireAwsEnv();
+
     const { employeeCode } = req.params;
     const file = req.file;
     if (!file) {
@@ -797,4 +811,3 @@ if (require.main === module) {
 }
 
 module.exports = { app, bootstrap };
-
