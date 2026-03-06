@@ -58,13 +58,16 @@ if (!process.env.JWT_SECRET) {
   console.warn("JWT_SECRET not set. Using development fallback secret.");
 }
 
-// MySQL Connection
-const db = mysql.createConnection({
+// MySQL Connection Pool
+const db = mysql.createPool({
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
   connectTimeout: DB_CONNECT_TIMEOUT_MS
 });
 
@@ -342,7 +345,7 @@ app.get("/api/admin/verify", authenticateAdmin, (req, res) => {
   return res.json({ valid: true, admin: req.admin });
 });
 
-app.get("/api/employees",  async (req, res) => {
+app.get("/api/employees", async (req, res) => {
   try {
     const rows = await query(
       `SELECT
@@ -438,7 +441,7 @@ app.post("/api/employees", authenticateAdmin, upload.single("image"), async (req
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    db.query(
+    await query(
       sql,
       [
         resolvedEmployeeCode,
@@ -456,19 +459,15 @@ app.post("/api/employees", authenticateAdmin, upload.single("image"), async (req
         biometricStatus || "Active",
         s3Key,
         uploadResult.Location
-      ],
-      (err, result) => {
-        if (err) return res.status(500).json(err);
-        db.query(
-          "INSERT INTO employee_photos (employee_code, image_s3_key, image_url) VALUES (?, ?, ?)",
-          [resolvedEmployeeCode, s3Key, uploadResult.Location],
-          (photoErr) => {
-            if (photoErr) return res.status(500).json(photoErr);
-            return res.json({ message: "Employee Created Successfully" });
-          }
-        );
-      }
+      ]
     );
+
+    await query(
+      "INSERT INTO employee_photos (employee_code, image_s3_key, image_url) VALUES (?, ?, ?)",
+      [resolvedEmployeeCode, s3Key, uploadResult.Location]
+    );
+
+    return res.json({ message: "Employee Created Successfully" });
 
   } catch (error) {
     console.error(error);
@@ -635,13 +634,9 @@ const PORT = process.env.PORT || 5000;
 
 const connectDb = () =>
   new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error(`Database connection timed out after ${DB_CONNECT_TIMEOUT_MS}ms`));
-    }, DB_CONNECT_TIMEOUT_MS + 1000);
-
-    db.connect((err) => {
-      clearTimeout(timeout);
+    db.getConnection((err, connection) => {
       if (err) return reject(err);
+      connection.release();
       resolve();
     });
   });
@@ -727,12 +722,12 @@ app.post("/api/contests", authenticateAdmin, async (req, res) => {
       endsOn,
       designType || "contest1",
       firstPlace || "",
-       firstPoints || 0,
+      firstPoints || 0,
 
       secondPlace || "",
-       secondPoints || 0,
+      secondPoints || 0,
       thirdPlace || "",
-       thirdPoints || 0
+      thirdPoints || 0
     ];
 
     const result = await query(sql, values);
@@ -789,23 +784,24 @@ let bootstrapPromise;
 
 const bootstrap = () => {
   if (!bootstrapPromise) {
-    bootstrapPromise = Promise.race([
-      connectDb()
-        .then(() => {
-          console.log("MySQL connection established.");
-          return initializeAdminTable();
-        })
-        .then(() => initializeContestsTable()),
-        // .then(() => initializeEmployeesTable())
-        // .then(() => seedEmployeesTable()),
-      new Promise((_, reject) =>
+    bootstrapPromise = (async () => {
+      const timeoutPromise = new Promise((_, reject) =>
         setTimeout(
           () => reject(new Error(`Backend bootstrap timed out after ${BOOTSTRAP_TIMEOUT_MS}ms`)),
           BOOTSTRAP_TIMEOUT_MS
         )
-      )
-    ]).catch((error) => {
-      bootstrapPromise = undefined;
+      );
+
+      const startupPromise = (async () => {
+        await connectDb();
+        console.log("MySQL connection pool established.");
+        await initializeAdminTable();
+        await initializeContestsTable();
+      })();
+
+      await Promise.race([startupPromise, timeoutPromise]);
+    })().catch((error) => {
+      bootstrapPromise = null;
       throw error;
     });
   }

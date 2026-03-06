@@ -31,7 +31,7 @@ export const fetchJson = async (path, init = {}) => {
     headers.set("Accept", "application/json");
   }
 
-  const timeoutMs = init.timeoutMs || 30000;
+  const timeoutMs = init.timeoutMs || 60000;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
