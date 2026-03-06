@@ -795,7 +795,7 @@ const bootstrap = () => {
           console.log("MySQL connection established.");
           return initializeAdminTable();
         })
-        .then(() => initializeContestsTable())
+        .then(() => initializeContestsTable()),
         // .then(() => initializeEmployeesTable())
         // .then(() => seedEmployeesTable()),
       new Promise((_, reject) =>

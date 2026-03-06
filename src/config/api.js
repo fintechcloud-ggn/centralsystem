@@ -16,6 +16,16 @@ export const buildApiUrl = (path) => {
 };
 
 export const fetchJson = async (path, init = {}) => {
+  const stringifyDetail = (value) => {
+    if (value === null || value === undefined) return "";
+    if (typeof value === "string") return value;
+    try {
+      return JSON.stringify(value);
+    } catch (error) {
+      return String(value);
+    }
+  };
+
   const headers = new Headers(init.headers || {});
   if (!headers.has("Accept")) {
     headers.set("Accept", "application/json");
@@ -57,7 +67,10 @@ export const fetchJson = async (path, init = {}) => {
     try {
       if (contentType.toLowerCase().includes("application/json")) {
         const json = await response.json();
-        details = json?.details || json?.error || JSON.stringify(json);
+        details =
+          stringifyDetail(json?.details) ||
+          stringifyDetail(json?.error) ||
+          stringifyDetail(json);
       } else {
         details = (await response.text()).replace(/\s+/g, " ").trim().slice(0, 200);
       }
