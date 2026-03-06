@@ -101,7 +101,17 @@ const upload = multer({
 
 const query = (sql, values = []) =>
   new Promise((resolve, reject) => {
+    let finished = false;
+    const timer = setTimeout(() => {
+      if (finished) return;
+      finished = true;
+      reject(new Error(`Database query timed out after ${DB_QUERY_TIMEOUT_MS}ms`));
+    }, DB_QUERY_TIMEOUT_MS);
+
     db.query({ sql, timeout: DB_QUERY_TIMEOUT_MS }, values, (err, rows) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
       if (err) return reject(err);
       resolve(rows);
     });
