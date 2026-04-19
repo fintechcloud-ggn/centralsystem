@@ -124,6 +124,30 @@ const sanitizeFileName = (value) =>
     .replace(/\s+/g, "_")
     .replace(/[^a-zA-Z0-9._-]/g, "");
 
+const getSignedImageUrl = (imageS3Key, fallbackUrl = null) => {
+  const normalizedKey = String(imageS3Key || "").trim();
+  if (!normalizedKey) {
+    return fallbackUrl;
+  }
+
+  try {
+    return s3.getSignedUrl("getObject", {
+      Bucket: process.env.AWS_S3_BUCKET,
+      Key: normalizedKey,
+      Expires: 60 * 60
+    });
+  } catch (error) {
+    console.error(`Failed to sign S3 URL for key ${normalizedKey}:`, error);
+    return fallbackUrl;
+  }
+};
+
+const attachSignedImageUrls = (rows = []) =>
+  rows.map((row) => ({
+    ...row,
+    image_url: getSignedImageUrl(row.image_s3_key, row.image_url)
+  }));
+
 const initializeAdminTable = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS admin_users (
@@ -351,7 +375,7 @@ app.get("/api/employees",  async (req, res) => {
       ORDER BY id DESC`
     );
 
-    return res.json(rows);
+    return res.json(attachSignedImageUrls(rows));
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Server Error" });
@@ -543,7 +567,7 @@ app.get("/api/employees/:employeeCode/photos", authenticateAdmin, async (req, re
        ORDER BY created_at DESC`,
       [employeeCode]
     );
-    return res.json(rows);
+    return res.json(attachSignedImageUrls(rows));
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Server Error" });
@@ -766,8 +790,8 @@ connectDb()
     console.log("MySQL connection established.");
     return initializeAdminTable();
   })
-   .then(() => initializeContestsTable())
-  // .then(() => initializeEmployeesTable())
+  .then(() => initializeEmployeesTable())
+  .then(() => initializeContestsTable())
   // .then(() => seedEmployeesTable())
   .then(() => {
     app.listen(PORT, () => {
@@ -778,6 +802,4 @@ connectDb()
     console.error("Startup failed:", error);
     process.exit(1);
   });
-
-
 

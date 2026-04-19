@@ -1,6 +1,9 @@
 import React from "react";
+import { formatContestDate, formatContestTime } from "./contestDateTime";
 
 function Contest1({ previewData }) {
+  const contestDate = formatContestDate(previewData?.ends_on);
+  const contestTime = formatContestTime(previewData?.ends_on);
   const steps = [
     {
       id: 1,
@@ -118,8 +121,14 @@ function Contest1({ previewData }) {
                 <p className="text-white uppercase tracking-wide font-extrabold text-lg md:text-3xl leading-tight">
                   You Have Until{" "}
                   <span className="text-[#f2bb2f]">
-                    {previewData?.ends_on || "30 September"}
+                    {contestDate || "30/09/2026"}
                   </span>
+                  {contestTime ? (
+                    <>
+                      <br />
+                      <span className="text-[#f2bb2f]">{contestTime}</span>
+                    </>
+                  ) : null}
                   <br />
                   Good Luck!
                 </p>
@@ -219,4 +228,3 @@ function Contest1({ previewData }) {
 }
 
 export default Contest1;
-

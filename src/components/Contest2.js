@@ -1,6 +1,9 @@
 import React from "react";
+import { formatContestDate, formatContestTime } from "./contestDateTime";
 
 function Contest2({ previewData }) {
+  const contestDate = formatContestDate(previewData?.ends_on);
+  const contestTime = formatContestTime(previewData?.ends_on);
   const leaders = [
     {
       rank: 1,
@@ -66,8 +69,11 @@ function Contest2({ previewData }) {
                 <span className="text-[10px] md:text-xs uppercase font-semibold tracking-wide">
                   Submit before
                 </span>
-                <span className="text-4xl md:text-5xl font-black leading-none">
-                  {previewData?.ends_on || "15"}
+                <span className="text-xl md:text-2xl font-black leading-tight text-center px-2">
+                  {contestDate || "15/06/2027"}
+                </span>
+                <span className="mt-1 text-xs md:text-sm font-semibold uppercase tracking-wide">
+                  {contestTime || "6:30 PM"}
                 </span>
               </div>
             </div>

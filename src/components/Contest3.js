@@ -1,6 +1,9 @@
 import React from "react";
+import { formatContestDate, formatContestTime } from "./contestDateTime";
 
 function Contest3({ previewData }) {
+  const contestDate = formatContestDate(previewData?.ends_on);
+  const contestTime = formatContestTime(previewData?.ends_on);
   const leaderboard = [
     {
       rank: 1,
@@ -49,8 +52,13 @@ function Contest3({ previewData }) {
             <div className="relative z-10 mt-10 px-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-full bg-[#f6f2e9] text-[#53150d] text-center py-2.5 text-3xl md:text-4xl font-bold">
-                  {previewData?.ends_on || "20 June 2027"}
+                  {contestDate || "20/06/2027"}
                 </div>
+                {contestTime ? (
+                  <div className="rounded-full bg-[#fff4bf] text-[#5a2b00] text-center py-2 text-xl md:text-2xl font-bold">
+                    {contestTime}
+                  </div>
+                ) : null}
               </div>
               <div className="mt-3 rounded-full bg-[#ffe900] text-[#5a2b00] text-center py-2.5 text-3xl md:text-4xl font-extrabold">
                Enter the Contest & Win Amazing Prizes!
