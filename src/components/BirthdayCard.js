@@ -82,7 +82,7 @@ function BirthdayCarousel() {
   }
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-[#ececec]">
+    <div className="relative w-full h-[100dvh] min-h-[100dvh] overflow-hidden bg-[#ececec]">
       {/* SLIDES CONTAINER */}
       <div
         className="flex h-full transition-transform duration-700 ease-in-out"
@@ -95,7 +95,7 @@ function BirthdayCarousel() {
             key={user.id}
             className="w-full h-full flex-shrink-0 flex items-center justify-center p-2 md:p-3"
           >
-            <div className="relative w-full max-w-6xl h-[94vh] bg-[#ececec] border border-[#d7d7d7] px-3 py-3 md:px-6 md:py-4">
+            <div className="relative w-full max-w-6xl h-full bg-[#ececec] border border-[#d7d7d7] px-3 py-3 md:px-6 md:py-4">
               <div className="absolute left-3 top-3 h-6 w-6 rounded-full border-2 border-[#cfcfcf]" />
               <div className="absolute right-3 top-24 h-0 w-0 border-l-[10px] border-l-transparent border-t-[16px] border-t-[#cfcfcf] border-r-[10px] border-r-transparent" />
 

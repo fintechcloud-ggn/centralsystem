@@ -12,8 +12,11 @@ const quickActions = [
 
 function AdminOverview() {
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5001";
+  const EMPLOYEES_PER_PAGE = 10;
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -45,6 +48,41 @@ function AdminOverview() {
       { label: "Male", value: String(maleCount), change: "Gender split" }
     ];
   }, [employees]);
+
+  const filteredEmployees = useMemo(() => {
+    const normalizedQuery = searchTerm.trim().toLowerCase();
+    if (!normalizedQuery) return employees;
+
+    return employees.filter((item) =>
+      [
+        item.employee_code,
+        item.employee_name,
+        item.company,
+        item.department,
+        item.designation
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedQuery)
+    );
+  }, [employees, searchTerm]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / EMPLOYEES_PER_PAGE));
+  const paginatedEmployees = useMemo(() => {
+    const startIndex = (currentPage - 1) * EMPLOYEES_PER_PAGE;
+    return filteredEmployees.slice(startIndex, startIndex + EMPLOYEES_PER_PAGE);
+  }, [currentPage, filteredEmployees, EMPLOYEES_PER_PAGE]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   return (
     <section className="space-y-6">
@@ -81,16 +119,76 @@ function AdminOverview() {
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-        <h3 className="text-lg font-semibold text-slate-900">Recent Employees</h3>
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">All Employees</h3>
+          </div>
+          <div className="w-full md:max-w-sm">
+            {/* <label className="mb-1 block text-sm font-medium text-slate-600">Search employee</label> */}
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search by code, name, company, department"
+              className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            />
+          </div>
+        </div>
+
+        {/* <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
+          <p />
+          <p>Page {currentPage} of {totalPages}</p>
+        </div> */}
+
         <div className="mt-4 space-y-2 text-sm text-slate-600">
-          {employees.slice(0, 5).map((item) => (
+          {paginatedEmployees.map((item) => (
             <p key={item.employee_code} className="rounded-lg bg-slate-50 px-4 py-3">
               {item.employee_code} - {item.employee_name} ({item.designation || "-"})
             </p>
           ))}
+          {!loading && employees.length > 0 && filteredEmployees.length === 0 && (
+            <p className="rounded-lg bg-slate-50 px-4 py-3">No employees match your search.</p>
+          )}
           {!loading && employees.length === 0 && (
             <p className="rounded-lg bg-slate-50 px-4 py-3">No employees found yet.</p>
           )}
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+          <button
+            type="button"
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Previous
+          </button>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+              <button
+                key={page}
+                type="button"
+                onClick={() => setCurrentPage(page)}
+                className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${
+                  currentPage === page
+                    ? "bg-cyan-600 text-white"
+                    : "border border-slate-300 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       </div>
     </section>
