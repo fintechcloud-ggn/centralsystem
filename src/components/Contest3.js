@@ -44,6 +44,9 @@ function Contest3({ previewData }) {
               <h1 className="mt-2 text-[#ffeb1c] text-2xl md:text-2xl font-black uppercase leading-none tracking-wide">
                Compete. Create. Conquer.
               </h1>
+               {/* <h1 className="mt-2 text-[#ffeb1c] text-2xl md:text-2xl font-black uppercase leading-none tracking-wide">
+               Compete. Create. Conquer.
+              </h1> */}
               <p className="mt-3 text-[#f6d9b5] text-2xl md:text-3xl font-semibold uppercase">
                 {previewData?.description || "Join the Challenge & Show Your Talent!"}
               </p>
