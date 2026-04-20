@@ -96,7 +96,7 @@ const handleSubmit = async (event) => {
     <section className="mx-auto w-full max-w-5xl">
       <div className="grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
         
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
+        <div className="rounded-[28px] border border-white/80 bg-white/70 p-5 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm md:p-7">
           <h2 className="text-2xl font-bold text-slate-900">Add New Contest</h2>
           <p className="mt-1 text-sm text-slate-500">
             Set up a contest and publish it for employee participation.
@@ -114,7 +114,7 @@ const handleSubmit = async (event) => {
                 value={formData.title}
                 onChange={handleChange}
                 required
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
                 placeholder="Employee Talent Hunt"
               />
             </div>
@@ -129,7 +129,7 @@ const handleSubmit = async (event) => {
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
                 >
                   <option>Photography</option>
                   <option>Essay</option>
@@ -146,7 +146,7 @@ const handleSubmit = async (event) => {
                   name="designType"
                   value={formData.designType}
                   onChange={handleChange}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
                 >
                   <option value="contest1">Contest One</option>
                   <option value="contest2">Contest Two</option>
@@ -167,7 +167,7 @@ const handleSubmit = async (event) => {
                 value={formData.prize}
                 onChange={handleChange}
                 placeholder="$500 + Certificate"
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
               />
             </div>
 
@@ -183,7 +183,7 @@ const handleSubmit = async (event) => {
                   value={formData.startsOn}
                   onChange={handleChange}
                   required
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
                 />
               </div>
 
@@ -197,7 +197,7 @@ const handleSubmit = async (event) => {
                   value={formData.endsOn}
                   onChange={handleChange}
                   required
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
                 />
               </div>
 
@@ -212,7 +212,7 @@ const handleSubmit = async (event) => {
                 value={formData.description}
                 onChange={handleChange}
                 rows={4}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
                 placeholder="Write contest rules, participation steps, and judging criteria"
               />
             </div>
@@ -230,7 +230,7 @@ const handleSubmit = async (event) => {
       value={formData.firstPlace}
       onChange={handleChange}
       placeholder="🥇 First Place Winner"
-      className="w-full rounded-md border px-3 py-2"
+      className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5"
     />
     <input
       type="number"
@@ -238,7 +238,7 @@ const handleSubmit = async (event) => {
       value={formData.firstPoints}
       onChange={handleChange}
       placeholder="Points"
-      className="w-28 rounded-md border px-3 py-2"
+      className="w-28 rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5"
     />
   </div>
 
@@ -250,7 +250,7 @@ const handleSubmit = async (event) => {
       value={formData.secondPlace}
       onChange={handleChange}
       placeholder="🥈 Second Place Winner"
-      className="w-full rounded-md border px-3 py-2"
+      className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5"
     />
     <input
       type="number"
@@ -258,7 +258,7 @@ const handleSubmit = async (event) => {
       value={formData.secondPoints}
       onChange={handleChange}
       placeholder="Points"
-      className="w-28 rounded-md border px-3 py-2"
+      className="w-28 rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5"
     />
   </div>
 
@@ -270,7 +270,7 @@ const handleSubmit = async (event) => {
       value={formData.thirdPlace}
       onChange={handleChange}
       placeholder="🥉 Third Place Winner"
-      className="w-full rounded-md border px-3 py-2"
+      className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5"
     />
     <input
       type="number"
@@ -278,7 +278,7 @@ const handleSubmit = async (event) => {
       value={formData.thirdPoints}
       onChange={handleChange}
       placeholder="Points"
-      className="w-28 rounded-md border px-3 py-2"
+      className="w-28 rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5"
     />
   </div>
 
@@ -292,7 +292,7 @@ const handleSubmit = async (event) => {
             <button
               type="submit"
               disabled={isSaving}
-              className="rounded-md bg-cyan-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full bg-gradient-to-r from-[#ff9f6f] to-[#f17dac] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSaving ? "Saving..." : "Publish Contest"}
             </button>
@@ -300,10 +300,10 @@ const handleSubmit = async (event) => {
           </form>
         </div>
 
-        <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+        <aside className="rounded-[28px] border border-white/80 bg-white/70 p-5 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm md:p-6">
           <h3 className="text-lg font-semibold text-slate-900">Preview</h3>
 
-<div className="mt-4 w-[260px] h-[180px] bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center">
+<div className="mt-4 h-[180px] w-[260px] overflow-hidden rounded-[24px] bg-[#f8f7fc] flex items-center justify-center">
   <div className="scale-[0.26] origin-center">
     <div className="w-[1000px] h-[700px]">
       {renderPreview()}

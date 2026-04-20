@@ -85,14 +85,14 @@ function NewUser() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5">
-      <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-cyan-800 p-5 text-white shadow-md md:p-6">
-        <h2 className="text-2xl font-bold">Add New Employee</h2>
-        <p className="mt-1 text-sm text-white text-emerald-100">
+      <div className="rounded-[28px] border border-white/80 bg-gradient-to-r from-[#f7f6fd] via-[#f8f5fb] to-[#efe5ff] p-5 text-slate-700 shadow-[0_18px_50px_rgba(148,163,184,0.12)] md:p-6">
+        <h2 className="text-2xl font-bold text-slate-800">Add New Employee</h2>
+        <p className="mt-1 text-sm text-slate-500">
           Fill all table fields and upload the employee image. Date of birth must be in ddmmyy format.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
+      <div className="rounded-[28px] border border-white/80 bg-white/70 p-5 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm md:p-7">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
@@ -104,7 +104,7 @@ function NewUser() {
                 value={formData.employeeCode}
                 onChange={handleChange}
                 placeholder="FTP25001"
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
               />
             </div>
             <div>
@@ -116,7 +116,7 @@ function NewUser() {
                 value={formData.employeeName}
                 onChange={handleChange}
                 placeholder="Ashutosh Sharma"
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
               />
             </div>
           </div>
@@ -130,7 +130,7 @@ function NewUser() {
                 required
                 value={formData.company}
                 onChange={handleChange}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
               />
             </div>
             <div>
@@ -141,7 +141,7 @@ function NewUser() {
                 required
                 value={formData.department}
                 onChange={handleChange}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
               />
             </div>
             <div>
@@ -152,7 +152,7 @@ function NewUser() {
                 required
                 value={formData.division}
                 onChange={handleChange}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
               />
             </div>
           </div>
@@ -166,7 +166,7 @@ function NewUser() {
                 required
                 value={formData.location}
                 onChange={handleChange}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
               />
             </div>
             <div>
@@ -177,7 +177,7 @@ function NewUser() {
                 required
                 value={formData.designation}
                 onChange={handleChange}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
               />
             </div>
             <div>
@@ -187,7 +187,7 @@ function NewUser() {
                 required
                 value={formData.employmentType}
                 onChange={handleChange}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
               >
                 <option value="Permanent">Permanent</option>
                 <option value="Contract">Contract</option>
@@ -204,7 +204,7 @@ function NewUser() {
                 required
                 value={formData.gender}
                 onChange={handleChange}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
               >
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
@@ -222,7 +222,7 @@ function NewUser() {
                 value={formData.dateOfBirth}
                 onChange={handleChange}
                 placeholder="010600"
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
               />
             </div>
           </div>
@@ -236,7 +236,7 @@ function NewUser() {
                 required
                 value={formData.doj}
                 onChange={handleChange}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
               />
             </div>
             <div>
@@ -246,7 +246,7 @@ function NewUser() {
                 required
                 value={formData.status}
                 onChange={handleChange}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
               >
                 <option value="Working">Working</option>
                 <option value="Resigned">Resigned</option>
@@ -276,7 +276,7 @@ function NewUser() {
               accept="image/*"
               required
               onChange={handleChange}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
             />
           </div>
 
@@ -284,14 +284,14 @@ function NewUser() {
             <button
               type="button"
               onClick={handleCancel}
-              className="rounded-md bg-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300"
+              className="rounded-full border border-white/80 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-white"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              className="rounded-md bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full bg-gradient-to-r from-[#ff9f6f] to-[#f17dac] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Creating..." : "Create Employee"}

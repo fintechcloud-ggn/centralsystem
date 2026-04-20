@@ -50,9 +50,9 @@ function DeleteExisting() {
 
   return (
     <section className="mx-auto w-full max-w-6xl space-y-5">
-      <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-cyan-800 p-5 shadow-sm md:p-7">
-        <h2 className="text-2xl text-white font-bold text-slate-900">Delete Employee</h2>
-        <p className="mt-1 text-sm text-white text-slate-600">
+      <div className="rounded-[28px] border border-white/80 bg-gradient-to-r from-[#f7f6fd] via-[#f8f5fb] to-[#efe5ff] p-5 shadow-[0_18px_50px_rgba(148,163,184,0.12)] md:p-7">
+        <h2 className="text-2xl font-bold text-slate-800">Delete Employee</h2>
+        <p className="mt-1 text-sm text-slate-500">
           Records shown below are live from database. Deletion is permanent.
         </p>
         <input
@@ -60,13 +60,13 @@ function DeleteExisting() {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search by code, name, department, designation"
-          className="mt-4 w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+          className="mt-4 w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#ffc3cf]"
         />
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-[28px] border border-white/80 bg-white/70 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 text-left text-slate-600">
+          <thead className="bg-[#f8f7fc] text-left text-slate-500">
             <tr>
               <th className="px-4 py-3 font-medium">Employee Code</th>
               <th className="px-4 py-3 font-medium">Employee Name</th>
@@ -79,7 +79,7 @@ function DeleteExisting() {
           <tbody>
             {filteredItems.length > 0 ? (
               filteredItems.map((item) => (
-                <tr key={item.employee_code} className="border-t border-slate-100">
+                <tr key={item.employee_code} className="border-t border-[#efedf8]">
                   <td className="px-4 py-3 font-medium text-slate-800">{item.employee_code}</td>
                   <td className="px-4 py-3 text-slate-700">{item.employee_name}</td>
                   <td className="px-4 py-3 text-slate-700">{item.department}</td>
@@ -90,7 +90,7 @@ function DeleteExisting() {
                       type="button"
                       onClick={() => setConfirmCode(item.employee_code)}
                       disabled={deletingCode === item.employee_code}
-                      className="rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-full bg-gradient-to-r from-[#ff8c8c] to-[#ff6f91] px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {deletingCode === item.employee_code ? "Deleting..." : "Delete"}
                     </button>
@@ -109,8 +109,8 @@ function DeleteExisting() {
       </div>
 
       {confirmCode && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/60 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[#e6e2f4]/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-[28px] border border-white/80 bg-white/85 p-6 shadow-[0_18px_60px_rgba(148,163,184,0.18)] backdrop-blur-xl">
             <h3 className="text-lg font-semibold text-slate-900">Confirm Deletion</h3>
             <p className="mt-2 text-sm text-slate-600">
               Are you sure you want to delete employee <span className="font-semibold">{confirmCode}</span>?
@@ -122,7 +122,7 @@ function DeleteExisting() {
               <button
                 type="button"
                 onClick={() => setConfirmCode("")}
-                className="rounded-md bg-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300"
+                className="rounded-full border border-white/80 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-white"
               >
                 Cancel
               </button>
@@ -130,7 +130,7 @@ function DeleteExisting() {
                 type="button"
                 onClick={() => handleDelete(confirmCode)}
                 disabled={deletingCode === confirmCode}
-                className="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-full bg-gradient-to-r from-[#ff8c8c] to-[#ff6f91] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {deletingCode === confirmCode ? "Deleting..." : "Delete Employee"}
               </button>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Carousel from "./Carousel";
+import BalloonBackground from "./ui/demo";
 
 function BirthdayCarousel() {
   const [birthdayUsers, setBirthdayUsers] = useState([]);
@@ -83,9 +84,10 @@ function BirthdayCarousel() {
 
   return (
     <div className="relative w-full h-[100dvh] min-h-[100dvh] overflow-hidden bg-[#ececec]">
+      <BalloonBackground className="absolute inset-0 opacity-60" />
       {/* SLIDES CONTAINER */}
       <div
-        className="flex h-full transition-transform duration-700 ease-in-out"
+        className="relative z-10 flex h-full transition-transform duration-700 ease-in-out"
         style={{
           transform: `translateX(-${currentIndex * 100}%)`,
         }}
@@ -95,14 +97,14 @@ function BirthdayCarousel() {
             key={user.id}
             className="w-full h-full flex-shrink-0 flex items-center justify-center p-2 md:p-3"
           >
-            <div className="relative w-full max-w-6xl h-full bg-[#ececec] border border-[#d7d7d7] px-3 py-3 md:px-6 md:py-4">
+            <div className="relative h-full w-full max-w-6xl border border-white/20 bg-[#ececec]/92 px-3 py-3 backdrop-blur-[2px] md:px-6 md:py-4">
               <div className="absolute left-3 top-3 h-6 w-6 rounded-full border-2 border-[#cfcfcf]" />
               <div className="absolute right-3 top-24 h-0 w-0 border-l-[10px] border-l-transparent border-t-[16px] border-t-[#cfcfcf] border-r-[10px] border-r-transparent" />
 
               <div className="flex h-full flex-col justify-between gap-3 md:gap-4">
                 <div className="flex flex-col gap-3 md:gap-4 md:flex-row md:items-center">
                   {/* LEFT SIDE */}
-                  <div className="w-full md:w-5/12 md:pr-8">
+                  <div className="w-full md:w-[35%] md:pr-4">
                     <h3 className="text-[#c8a15a] text-xl md:text-2xl font-extrabold leading-tight tracking-wide uppercase">
                       Fintech Cloud
                     </h3>
@@ -133,18 +135,18 @@ function BirthdayCarousel() {
                   </div>
 
                   {/* RIGHT SIDE */}
-                  <div className="w-full md:w-7/12 flex items-center justify-center relative">
-                    <div className="w-full max-w-[300px] md:max-w-[340px] border-4 border-[#f6f6f6] p-0">
+                  <div className="w-full md:w-[65%] flex items-center justify-center relative">
+                    <div className="w-full max-w-[460px] md:max-w-[660px] border-4 border-[#f6f6f6] p-0">
                       {user.image_url ? (
                         <img
                           src={user.image_url}
                           alt={user.employee_name}
-                          className="w-full h-[190px] md:h-[280px] object-cover"
+                          className="w-full h-[320px] md:h-[540px] object-cover"
                         />
                       ) : (
-                        <div className="w-full h-[190px] md:h-[280px] flex items-center justify-center bg-gray-100">
+                        <div className="w-full h-[320px] md:h-[540px] flex items-center justify-center bg-gray-100">
                           {/* Circle Avatar */}
-                          <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#c8a15a] flex items-center justify-center text-white text-4xl md:text-5xl font-bold shadow-lg">
+                          <div className="w-36 h-36 md:w-48 md:h-48 rounded-full bg-[#c8a15a] flex items-center justify-center text-white text-5xl md:text-6xl font-bold shadow-lg">
                             {user.employee_name
                               ?.trim()
                               ?.charAt(0)
@@ -154,7 +156,7 @@ function BirthdayCarousel() {
                       )}
                     </div>
 
-                    <div className="absolute -bottom-6 right-0 md:-right-4 bg-[#c8a15a] px-4 md:px-7 py-2 md:py-3 text-center min-w-[200px] md:min-w-[230px]">
+                    <div className="absolute -bottom-6 right-0 md:-right-16 bg-[#c8a15a] px-4 md:px-9 py-2 md:py-4 text-center min-w-[240px] md:min-w-[380px]">
                       <h2 className="text-[#1f232b] text-xl md:text-3xl font-black uppercase leading-none">
                         {user.employee_name}
                       </h2>

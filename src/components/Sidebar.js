@@ -84,9 +84,9 @@ const linkClassName = ({ isActive }) =>
   } ${
     isActive
       ? collapsed
-        ? "text-white"
-        : "bg-white text-blue-950 shadow-sm"
-      : "text-blue-100 hover:bg-white/10 hover:text-white"
+        ? "text-slate-900"
+        : "bg-white text-slate-800 shadow-[0_10px_25px_rgba(148,163,184,0.16)]"
+      : "text-slate-500 hover:bg-white/70 hover:text-slate-800"
   }`;
 
   const iconBadgeClass =
@@ -142,10 +142,10 @@ const linkClassName = ({ isActive }) =>
             <span
               className={`${iconBadgeClass} ${
                 isActive
-                  ? "bg-blue-900/10 text-blue-900 ring-blue-900/20"
+                  ? "bg-[#f1efff] text-[#7c72b6] ring-[#ddd7fb]"
                   : collapsed
-                    ? "bg-white/10 text-white ring-white/10"
-                    : "bg-white/5 text-inherit ring-white/10"
+                    ? "bg-white/70 text-slate-600 ring-white/70"
+                    : "bg-white/60 text-inherit ring-white/70"
               }`}
             >
               <MenuGlyph type={item.iconType} />
@@ -159,21 +159,21 @@ const linkClassName = ({ isActive }) =>
 
   return (
     <aside
-      className={`flex min-h-screen w-full flex-col bg-gradient-to-b from-slate-950 via-blue-950 to-blue-900 p-4 text-white shadow-xl md:p-5 ${
+      className={`flex min-h-screen w-full flex-col bg-gradient-to-b from-[#ebe6fb] via-[#f6f5fb] to-[#eef3ff] p-4 text-slate-800 shadow-[0_18px_60px_rgba(148,163,184,0.18)] md:p-5 ${
         collapsed ? "md:items-center" : ""
       }`}
     >
-      <div className="mb-3 w-full border-b border-white/10 pb-4">
+      <div className="mb-3 w-full border-b border-white/70 pb-4">
         <div className={`flex items-center ${collapsed ? "justify-center" : "gap-3"}`}>
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#7c72b6] ring-1 ring-white/80 shadow-sm">
             <MenuGlyph type="overview" />
           </span>
           {!collapsed && (
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-200">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#8b84b7]">
                 Central System
               </p>
-              <p className="text-base font-semibold leading-5 text-white">Admin Panel</p>
+              <p className="text-base font-semibold leading-5 text-slate-800">Admin Panel</p>
             </div>
           )}
         </div>
@@ -185,17 +185,17 @@ const linkClassName = ({ isActive }) =>
         </ul>
       ) : (
         <>
-          <p className="mb-0.5 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-300">
+          <p className="mb-0.5 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9d98bb]">
             Dashboard
           </p>
           <ul className="w-full space-y-0.5">{commonItems.map(renderItem)}</ul>
 
-          <p className="mb-0.5 mt-3 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-300">
+          <p className="mb-0.5 mt-3 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9d98bb]">
             Employee Menu
           </p>
           <ul className="w-full space-y-0.5">{employeeItems.map(renderItem)}</ul>
 
-          <p className="mb-0.5 mt-3 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-300">
+          <p className="mb-0.5 mt-3 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9d98bb]">
             Contest Menu
           </p>
           <ul className="w-full space-y-0.5">{contestItems.map(renderItem)}</ul>
@@ -203,9 +203,9 @@ const linkClassName = ({ isActive }) =>
       )}
 
       {!collapsed && (
-        <div className="mt-6 w-full rounded-xl border border-white/15 bg-white/5 p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-200">Quick Tip</p>
-          <p className="mt-2 text-sm leading-5 text-blue-100">
+        <div className="mt-6 w-full rounded-[24px] border border-white/80 bg-white/60 p-4 shadow-[0_12px_30px_rgba(148,163,184,0.12)] backdrop-blur-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8b84b7]">Quick Tip</p>
+          <p className="mt-2 text-sm leading-5 text-slate-500">
             Use Overview first, then choose an action from the menu to keep admin tasks organized.
           </p>
         </div>
@@ -214,7 +214,7 @@ const linkClassName = ({ isActive }) =>
       <button
         type="button"
         onClick={handleLogout}
-        className={`mt-auto h-11 w-full rounded-xl border border-white/20 bg-white/10 px-3 text-sm font-medium text-blue-100 transition hover:bg-white/15 hover:text-white ${
+        className={`mt-auto h-11 w-full rounded-xl border border-white/80 bg-white/70 px-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-white hover:text-slate-900 ${
           collapsed
             ? "flex items-center justify-center"
             : "grid grid-cols-[2.5rem_minmax(0,1fr)] items-center text-left"
@@ -224,8 +224,8 @@ const linkClassName = ({ isActive }) =>
         <span
           className={`${iconBadgeClass} ${
             collapsed
-              ? "bg-white/10 text-white ring-white/30"
-              : "bg-white/5 text-inherit ring-white/10"
+              ? "bg-[#f1efff] text-[#7c72b6] ring-[#ddd7fb]"
+              : "bg-[#f7f6fd] text-inherit ring-white/80"
           }`}
         >
           <MenuIcon>

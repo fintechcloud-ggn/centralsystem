@@ -40,12 +40,20 @@ function AdminOverview() {
     const working = employees.filter((item) => item.status === "Working").length;
     const biometricActive = employees.filter((item) => item.biometric_status === "Active").length;
     const maleCount = employees.filter((item) => item.gender === "Male").length;
+    const femaleCount = employees.filter((item) => item.gender === "Female").length;
 
     return [
       { label: "Employees", value: String(employees.length), change: "Total records" },
       { label: "Working", value: String(working), change: "Current status" },
       { label: "Biometric Active", value: String(biometricActive), change: "Attendance ready" },
-      { label: "Male", value: String(maleCount), change: "Gender split" }
+      {
+        label: "Gender",
+        value: {
+          male: String(maleCount),
+          female: String(femaleCount)
+        },
+        change: "Gender split"
+      }
     ];
   }, [employees]);
 
@@ -86,10 +94,10 @@ function AdminOverview() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-cyan-800 p-6 text-white shadow-lg md:p-8">
-        <p className="text-xs uppercase tracking-[0.25em] text-blue-200">Control Center</p>
+      <div className="rounded-[28px] border border-white/80 bg-gradient-to-r from-[#f7f6fd] via-[#f8f5fb] to-[#efe5ff] p-6 text-slate-700 shadow-[0_18px_50px_rgba(148,163,184,0.12)] md:p-8">
+        <p className="text-xs uppercase tracking-[0.25em] text-[#9d98bb]">Control Center</p>
         <h2 className="mt-2 text-2xl font-semibold md:text-3xl">Welcome back, Admin</h2>
-        <p className="mt-2 max-w-2xl text-sm text-blue-100 md:text-base">
+        <p className="mt-2 max-w-2xl text-sm text-slate-500 md:text-base">
           Employee widgets now update from live database records.
         </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -97,7 +105,7 @@ function AdminOverview() {
             <Link
               key={action.label}
               to={action.to}
-              className="rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white no-underline backdrop-blur-sm transition hover:bg-white/20"
+              className="rounded-full border border-white/80 bg-white/75 px-4 py-3 text-sm font-medium text-slate-700 no-underline shadow-sm backdrop-blur-sm transition hover:bg-white"
             >
               {action.label}
             </Link>
@@ -109,16 +117,33 @@ function AdminOverview() {
         {stats.map((item) => (
           <article
             key={item.label}
-            className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="rounded-[24px] border border-white/80 bg-white/75 p-5 shadow-[0_12px_35px_rgba(148,163,184,0.10)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(148,163,184,0.16)]"
           >
             <p className="text-sm text-slate-500">{item.label}</p>
-            <p className="mt-2 text-3xl font-bold text-slate-900">{loading ? "..." : item.value}</p>
+            {typeof item.value === "string" ? (
+              <p className="mt-2 text-3xl font-bold text-slate-900">{loading ? "..." : item.value}</p>
+            ) : (
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-[#f7f6fd] px-3 py-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Male</p>
+                  <p className="mt-1 text-2xl font-bold text-slate-900">
+                    {loading ? "..." : item.value.male}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-[#f7f6fd] px-3 py-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Female</p>
+                  <p className="mt-1 text-2xl font-bold text-slate-900">
+                    {loading ? "..." : item.value.female}
+                  </p>
+                </div>
+              </div>
+            )}
             <p className="mt-2 text-sm text-emerald-600">{item.change}</p>
           </article>
         ))}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+      <div className="rounded-[28px] border border-white/80 bg-white/70 p-5 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm md:p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <h3 className="text-lg font-semibold text-slate-900">All Employees</h3>
@@ -130,7 +155,7 @@ function AdminOverview() {
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search by code, name, company, department"
-              className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
             />
           </div>
         </div>
@@ -142,15 +167,15 @@ function AdminOverview() {
 
         <div className="mt-4 space-y-2 text-sm text-slate-600">
           {paginatedEmployees.map((item) => (
-            <p key={item.employee_code} className="rounded-lg bg-slate-50 px-4 py-3">
+            <p key={item.employee_code} className="rounded-2xl bg-[#f8f7fc] px-4 py-3">
               {item.employee_code} - {item.employee_name} ({item.designation || "-"})
             </p>
           ))}
           {!loading && employees.length > 0 && filteredEmployees.length === 0 && (
-            <p className="rounded-lg bg-slate-50 px-4 py-3">No employees match your search.</p>
+            <p className="rounded-2xl bg-[#f8f7fc] px-4 py-3">No employees match your search.</p>
           )}
           {!loading && employees.length === 0 && (
-            <p className="rounded-lg bg-slate-50 px-4 py-3">No employees found yet.</p>
+            <p className="rounded-2xl bg-[#f8f7fc] px-4 py-3">No employees found yet.</p>
           )}
         </div>
 
@@ -159,7 +184,7 @@ function AdminOverview() {
             type="button"
             onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full border border-[#ece9f8] bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-[#f8f7fc] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Previous
           </button>
@@ -172,8 +197,8 @@ function AdminOverview() {
                 onClick={() => setCurrentPage(page)}
                 className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${
                   currentPage === page
-                    ? "bg-cyan-600 text-white"
-                    : "border border-slate-300 text-slate-700 hover:bg-slate-50"
+                    ? "bg-gradient-to-r from-[#ff9f6f] to-[#f17dac] text-white"
+                    : "border border-[#ece9f8] bg-white text-slate-700 hover:bg-[#f8f7fc]"
                 }`}
               >
                 {page}
@@ -185,7 +210,7 @@ function AdminOverview() {
             type="button"
             onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
             disabled={currentPage === totalPages}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full border border-[#ece9f8] bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-[#f8f7fc] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Next
           </button>
