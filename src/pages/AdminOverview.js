@@ -6,6 +6,8 @@ import { getAdminToken } from "../components/adminAuth";
 const quickActions = [
   { label: "Add New Employee", to: "/admin/NewUser" },
   { label: "Add New Contest", to: "/admin/add-contest" },
+  { label: "Edit Contest", to: "/admin/edit-contest" },
+  { label: "Delete Contest", to: "/admin/delete-contest" },
   { label: "Edit Employee", to: "/admin/edit-existing" },
   { label: "Delete Employee", to: "/admin/delete-existing" }
 ];

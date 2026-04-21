@@ -123,6 +123,16 @@ const linkClassName = ({ isActive }) =>
       label: "Add New Contest",
       to: "/admin/add-contest",
       iconType: "contest"
+    },
+    {
+      label: "Edit Contest",
+      to: "/admin/edit-contest",
+      iconType: "edit"
+    },
+    {
+      label: "Delete Contest",
+      to: "/admin/delete-contest",
+      iconType: "delete"
     }
   ];
 

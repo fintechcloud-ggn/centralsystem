@@ -58,12 +58,15 @@ if (!process.env.JWT_SECRET) {
 }
 
 // MySQL Connection
-const db = mysql.createConnection({
+const db = mysql.createPool({
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 // AWS S3 Config
@@ -639,8 +642,9 @@ const PORT = process.env.PORT || 5000;
 
 const connectDb = () =>
   new Promise((resolve, reject) => {
-    db.connect((err) => {
+    db.getConnection((err, connection) => {
       if (err) return reject(err);
+      connection.release();
       resolve();
     });
   });
@@ -783,6 +787,92 @@ app.get("/api/contests", async (req, res) => {
   }
 });
 
+app.put("/api/contests/:id", authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      title,
+      category,
+      description,
+      prize,
+      startsOn,
+      endsOn,
+      designType,
+      firstPlace,
+      firstPoints,
+      secondPlace,
+      secondPoints,
+      thirdPlace,
+      thirdPoints
+    } = req.body;
+
+    if (!title || !startsOn || !endsOn) {
+      return res.status(400).json({
+        error: "Title, start date and end date are required"
+      });
+    }
+
+    const result = await query(
+      `UPDATE contests
+       SET title = ?,
+           category = ?,
+           description = ?,
+           prize = ?,
+           starts_on = ?,
+           ends_on = ?,
+           design_type = ?,
+           first_place = ?,
+           first_points = ?,
+           second_place = ?,
+           second_points = ?,
+           third_place = ?,
+           third_points = ?
+       WHERE id = ?`,
+      [
+        title.trim(),
+        category || "",
+        description || "",
+        prize || "",
+        startsOn,
+        endsOn,
+        designType || "contest1",
+        firstPlace || "",
+        firstPoints || 0,
+        secondPlace || "",
+        secondPoints || 0,
+        thirdPlace || "",
+        thirdPoints || 0,
+        id
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Contest not found" });
+    }
+
+    return res.json({ message: "Contest updated successfully" });
+  } catch (error) {
+    console.error("Contest Update Error:", error);
+    return res.status(500).json({ error: "Contest update failed" });
+  }
+});
+
+app.delete("/api/contests/:id", authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await query("DELETE FROM contests WHERE id = ?", [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Contest not found" });
+    }
+
+    return res.json({ message: "Contest deleted successfully" });
+  } catch (error) {
+    console.error("Contest Delete Error:", error);
+    return res.status(500).json({ error: "Contest delete failed" });
+  }
+});
+
 
 //connections
 connectDb()
@@ -802,4 +892,3 @@ connectDb()
     console.error("Startup failed:", error);
     process.exit(1);
   });
-
