@@ -66,7 +66,9 @@ const db = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 20,
+  acquireTimeout: 10000,
+  connectTimeout: 10000
 });
 
 // AWS S3 Config
@@ -85,7 +87,7 @@ const upload = multer({
 
 const query = (sql, values = []) =>
   new Promise((resolve, reject) => {
-    db.query(sql, values, (err, rows) => {
+    db.query({ sql, values, timeout: 10000 }, (err, rows) => {
       if (err) return reject(err);
       resolve(rows);
     });
