@@ -876,15 +876,19 @@ app.delete("/api/contests/:id", authenticateAdmin, async (req, res) => {
 
 let startupPromise;
 
-const initializeApp = () => {
+const initializeApp = ({ runMigrations = false } = {}) => {
   if (!startupPromise) {
     startupPromise = Promise.resolve()
       .then(() => validateEnvironment())
       .then(() => connectDb())
       .then(() => {
         console.log("MySQL connection established.");
-        return initializeAdminTable();
-      })
+      });
+  }
+
+  if (runMigrations) {
+    return startupPromise
+      .then(() => initializeAdminTable())
       .then(() => initializeEmployeesTable())
       .then(() => initializeContestsTable());
       // .then(() => seedEmployeesTable())
@@ -894,7 +898,7 @@ const initializeApp = () => {
 };
 
 if (require.main === module) {
-  initializeApp()
+  initializeApp({ runMigrations: true })
     .then(() => {
       app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);

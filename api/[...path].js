@@ -3,7 +3,11 @@ const { app, initializeApp } = require("../Backend/server");
 
 let handlerPromise;
 
-module.exports = async (req, res) => {
+module.exports = async (req, res, context) => {
+  if (context) {
+    context.callbackWaitsForEmptyEventLoop = false;
+  }
+
   if (req.url && !req.url.startsWith("/api/")) {
     req.url = `/api${req.url.startsWith("/") ? "" : "/"}${req.url}`;
   }
