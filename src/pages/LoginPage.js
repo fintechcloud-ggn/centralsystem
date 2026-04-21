@@ -48,8 +48,11 @@ function Login() {
       toast.success("Login Successful");
       navigate("/admin", { replace: true });
     } catch (loginError) {
+      const responseError = loginError?.response?.data?.error;
       const message =
-        loginError?.response?.data?.error || "Invalid Email or Password";
+        typeof responseError === "string"
+          ? responseError
+          : responseError?.message || "Invalid Email or Password";
       setError(message);
     }
   };

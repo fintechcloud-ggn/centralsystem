@@ -5,6 +5,12 @@
   "functions": {
     "api/[...path].js": {
       "includeFiles": "Backend/**"
+    },
+    "api/admin/login.js": {
+      "includeFiles": "Backend/**"
+    },
+    "api/admin/verify.js": {
+      "includeFiles": "Backend/**"
     }
   },
   "rewrites": [
