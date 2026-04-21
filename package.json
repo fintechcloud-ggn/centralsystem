@@ -16,7 +16,8 @@
     "react-scripts": "5.0.1",
     "serverless-http": "^4.0.0",
     "sweetalert2": "^11.26.20",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",

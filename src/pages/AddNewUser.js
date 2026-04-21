@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import * as XLSX from "xlsx";
 import { getAdminToken } from "../components/adminAuth";
 import toast from "react-hot-toast";
 import { apiUrl } from "../lib/api";
@@ -23,6 +24,9 @@ function NewUser() {
 
   const [formData, setFormData] = useState(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bulkFile, setBulkFile] = useState(null);
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [bulkResult, setBulkResult] = useState(null);
 
   const handleChange = (event) => {
     const { name, value, files } = event.target;
@@ -82,6 +86,53 @@ function NewUser() {
     setFormData(initialFormData);
   };
 
+  const parseBulkFile = async (file) => {
+    const fileBuffer = await file.arrayBuffer();
+    const workbook = XLSX.read(fileBuffer, { type: "array", raw: false });
+    const firstSheetName = workbook.SheetNames[0];
+
+    if (!firstSheetName) {
+      throw new Error("No sheet found in file");
+    }
+
+    return XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      defval: "",
+      raw: false
+    });
+  };
+
+  const handleBulkUpload = async () => {
+    if (!bulkFile) {
+      toast.error("Select a CSV or Excel file");
+      return;
+    }
+
+    try {
+      setIsBulkUploading(true);
+      setBulkResult(null);
+      const rows = await parseBulkFile(bulkFile);
+      const token = getAdminToken();
+      const response = await axios.post(
+        apiUrl("/api/employees/bulk"),
+        { rows },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        }
+      );
+
+      setBulkResult(response.data);
+      toast.success(`Imported ${response.data.imported} employees`);
+      setBulkFile(null);
+    } catch (error) {
+      console.error(error);
+      const message =
+        error?.response?.data?.error || error?.message || "Bulk upload failed";
+      toast.error(message);
+    } finally {
+      setIsBulkUploading(false);
+    }
+  };
+
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5">
       <div className="rounded-[28px] border border-white/80 bg-gradient-to-r from-[#f7f6fd] via-[#f8f5fb] to-[#efe5ff] p-5 text-slate-700 shadow-[0_18px_50px_rgba(148,163,184,0.12)] md:p-6">
@@ -89,6 +140,51 @@ function NewUser() {
         <p className="mt-1 text-sm text-slate-500">
           Fill all table fields and upload the employee image. Date of birth must be in ddmmyy format.
         </p>
+      </div>
+
+      <div className="rounded-[28px] border border-white/80 bg-white/70 p-5 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm md:p-7">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h3 className="text-xl font-bold text-slate-800">Bulk Upload Employees</h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Upload CSV or Excel with Employee Code, Employee Name, Company, Department, Division, Location, Designation, Employment Type, Gender, Date of Birth, DOJ, Status, Biometric Status, and Image URL.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              onChange={(event) => setBulkFile(event.target.files?.[0] || null)}
+              className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 text-sm sm:w-80"
+            />
+            <button
+              type="button"
+              onClick={handleBulkUpload}
+              disabled={isBulkUploading}
+              className="rounded-full bg-gradient-to-r from-[#7c6cff] to-[#c17cff] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isBulkUploading ? "Uploading..." : "Upload File"}
+            </button>
+          </div>
+        </div>
+
+        {bulkResult && (
+          <div className="mt-4 rounded-3xl border border-[#ece9f8] bg-[#f8f7fc] p-4 text-sm text-slate-700">
+            <p className="font-semibold">
+              Imported {bulkResult.imported} of {bulkResult.total} rows
+              {bulkResult.failed ? `, ${bulkResult.failed} failed` : ""}
+            </p>
+            {bulkResult.errors?.length > 0 && (
+              <div className="mt-3 max-h-36 overflow-auto rounded-2xl bg-white/80 p-3">
+                {bulkResult.errors.slice(0, 20).map((item) => (
+                  <p key={`${item.row}-${item.message}`} className="text-xs text-red-600">
+                    Row {item.row}: {item.message}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="rounded-[28px] border border-white/80 bg-white/70 p-5 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm md:p-7">

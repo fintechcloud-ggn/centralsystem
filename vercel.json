@@ -11,6 +11,9 @@
     },
     "api/admin/verify.js": {
       "includeFiles": "Backend/**"
+    },
+    "api/employees/bulk.js": {
+      "includeFiles": "Backend/**"
     }
   },
   "rewrites": [

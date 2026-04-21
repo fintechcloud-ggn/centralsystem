@@ -30,7 +30,7 @@ if (!envLoaded) {
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 const requiredEnvVars = [
   "DB_HOST",
@@ -152,6 +152,137 @@ const attachSignedImageUrls = (rows = []) =>
     ...row,
     image_url: getSignedImageUrl(row.image_s3_key, row.image_url)
   }));
+
+const getFirstValue = (row, keys) => {
+  for (const key of keys) {
+    if (row[key] !== undefined && row[key] !== null && String(row[key]).trim() !== "") {
+      return String(row[key]).trim();
+    }
+  }
+
+  return "";
+};
+
+const normalizeBulkEmployeeRow = (rawRow) => {
+  const row = {};
+  Object.entries(rawRow || {}).forEach(([key, value]) => {
+    const normalizedKey = String(key || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+    row[normalizedKey] = value;
+  });
+
+  return {
+    employeeCode: getFirstValue(row, ["employeecode", "employeeid", "code", "empcode"]),
+    employeeName: getFirstValue(row, ["employeename", "name", "fullname"]),
+    company: getFirstValue(row, ["company"]),
+    department: getFirstValue(row, ["department"]),
+    division: getFirstValue(row, ["division"]),
+    location: getFirstValue(row, ["location"]),
+    designation: getFirstValue(row, ["designation"]),
+    employmentType: getFirstValue(row, ["employmenttype", "type"]) || "Permanent",
+    gender: getFirstValue(row, ["gender"]) || "Male",
+    dateOfBirth: getFirstValue(row, ["dateofbirth", "dob", "birthdate", "birthday"]),
+    doj: getFirstValue(row, ["doj", "dateofjoining", "joiningdate"]),
+    status: getFirstValue(row, ["status"]) || "Working",
+    biometricStatus: getFirstValue(row, ["biometricstatus", "biometric"]) || "Active",
+    imageUrl: getFirstValue(row, ["imageurl", "photo", "photourl", "image", "employeeimage"])
+  };
+};
+
+const uploadEmployeeImageFromUrl = async (employeeCode, imageUrl) => {
+  const normalizedUrl = String(imageUrl || "").trim();
+  if (!normalizedUrl) {
+    return { s3Key: null, location: null };
+  }
+
+  const response = await fetch(normalizedUrl);
+  if (!response.ok) {
+    throw new Error(`Image download failed with status ${response.status}`);
+  }
+
+  const contentType = response.headers.get("content-type") || "application/octet-stream";
+  const extension = contentType.includes("png")
+    ? "png"
+    : contentType.includes("webp")
+      ? "webp"
+      : contentType.includes("gif")
+        ? "gif"
+        : "jpg";
+  const buffer = Buffer.from(await response.arrayBuffer());
+  const s3Key = `${employeeCode}/${Date.now()}_bulk_image.${extension}`;
+  const uploadResult = await s3.upload({
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: s3Key,
+    Body: buffer,
+    ContentType: contentType
+  }).promise();
+
+  return { s3Key, location: uploadResult.Location };
+};
+
+const upsertBulkEmployee = async (employee, imageData) => {
+  await query(
+    `INSERT INTO employees (
+      employee_code,
+      employee_name,
+      company,
+      department,
+      division,
+      location,
+      designation,
+      employment_type,
+      gender,
+      date_of_birth,
+      doj,
+      status,
+      biometric_status,
+      image_s3_key,
+      image_url
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      employee_name = VALUES(employee_name),
+      company = VALUES(company),
+      department = VALUES(department),
+      division = VALUES(division),
+      location = VALUES(location),
+      designation = VALUES(designation),
+      employment_type = VALUES(employment_type),
+      gender = VALUES(gender),
+      date_of_birth = VALUES(date_of_birth),
+      doj = VALUES(doj),
+      status = VALUES(status),
+      biometric_status = VALUES(biometric_status),
+      image_s3_key = COALESCE(VALUES(image_s3_key), image_s3_key),
+      image_url = COALESCE(VALUES(image_url), image_url)`,
+    [
+      employee.employeeCode,
+      employee.employeeName,
+      employee.company,
+      employee.department,
+      employee.division,
+      employee.location,
+      employee.designation,
+      employee.employmentType,
+      employee.gender,
+      employee.dateOfBirth,
+      employee.doj,
+      employee.status,
+      employee.biometricStatus,
+      imageData.s3Key,
+      imageData.location
+    ]
+  );
+
+  if (imageData.s3Key && imageData.location) {
+    await query(
+      `INSERT IGNORE INTO employee_photos (employee_code, image_s3_key, image_url)
+       VALUES (?, ?, ?)`,
+      [employee.employeeCode, imageData.s3Key, imageData.location]
+    );
+  }
+};
 
 const initializeAdminTable = async () => {
   const createTableQuery = `
@@ -496,6 +627,65 @@ app.post("/api/employees", authenticateAdmin, upload.single("image"), async (req
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Server Error" });
+  }
+});
+
+app.post("/api/employees/bulk", authenticateAdmin, async (req, res) => {
+  try {
+    const rows = Array.isArray(req.body?.rows) ? req.body.rows : [];
+
+    if (rows.length === 0) {
+      return res.status(400).json({ error: "No employee rows found in file" });
+    }
+
+    const summary = {
+      total: rows.length,
+      imported: 0,
+      failed: 0,
+      errors: []
+    };
+
+    for (const [index, row] of rows.entries()) {
+      try {
+        const employee = normalizeBulkEmployeeRow(row);
+        employee.dateOfBirth = toDdMmYy(employee.dateOfBirth);
+        employee.doj = toIsoDate(employee.doj);
+
+        if (!employee.employeeCode || !employee.employeeName) {
+          throw new Error("Employee Code and Employee Name are required");
+        }
+
+        if (!employee.dateOfBirth) {
+          throw new Error("Date of Birth is required in ddmmyy, dd/mm/yyyy, or yyyy-mm-dd format");
+        }
+
+        if (!employee.doj) {
+          throw new Error("DOJ is required in yyyy-mm-dd format");
+        }
+
+        const imageData = await uploadEmployeeImageFromUrl(
+          employee.employeeCode,
+          employee.imageUrl
+        );
+
+        await upsertBulkEmployee(employee, imageData);
+        summary.imported += 1;
+      } catch (error) {
+        summary.failed += 1;
+        summary.errors.push({
+          row: index + 2,
+          message: error.message || "Import failed"
+        });
+      }
+    }
+
+    return res.json({
+      message: "Bulk employee import finished",
+      ...summary
+    });
+  } catch (error) {
+    console.error("Bulk employee import failed:", error);
+    return res.status(500).json({ error: "Bulk employee import failed" });
   }
 });
 
