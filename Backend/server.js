@@ -189,6 +189,16 @@ const initializeAdminTable = async () => {
   console.log("Default admin user created from environment variables.");
 };
 
+let adminInitPromise;
+
+const ensureAdminReady = () => {
+  if (!adminInitPromise) {
+    adminInitPromise = initializeAdminTable();
+  }
+
+  return adminInitPromise;
+};
+
 const initializeEmployeesTable = async () => {
   // await query("DROP TABLE IF EXISTS employee_photos");
   // await query("DROP TABLE IF EXISTS employees");
@@ -317,6 +327,8 @@ app.post("/api/admin/login", async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
+
+    await ensureAdminReady();
 
     const rows = await query(
       "SELECT id, email, password_hash FROM admin_users WHERE email = ? LIMIT 1",
