@@ -125,6 +125,7 @@ function EditContest() {
               filteredContests.map((contest) => (
                 <tr key={contest.id} className="border-t border-[#efedf8]">
                   <td className="px-4 py-3 font-medium text-slate-800">{contest.title}</td>
+                   {/* <td className="px-4 py-3 font-medium text-slate-800">{contest.title}</td> */}
                   <td className="px-4 py-3 text-slate-700">{contest.category}</td>
                   <td className="px-4 py-3 text-slate-700">{toDateInputValue(contest.starts_on)}</td>
                   <td className="px-4 py-3 text-slate-700">{toDateInputValue(contest.ends_on)}</td>
