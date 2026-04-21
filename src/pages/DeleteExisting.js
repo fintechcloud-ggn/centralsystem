@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { getAdminToken } from "../components/adminAuth";
+import { apiUrl } from "../lib/api";
 
 function DeleteExisting() {
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5001";
   const [items, setItems] = useState([]);
   const [query, setQuery] = useState("");
   const [deletingCode, setDeletingCode] = useState("");
@@ -11,11 +11,11 @@ function DeleteExisting() {
 
   const fetchEmployees = useCallback(async () => {
     const token = getAdminToken();
-    const response = await axios.get(`${API_BASE_URL}/api/employees`, {
+    const response = await axios.get(apiUrl("/api/employees"), {
       headers: token ? { Authorization: `Bearer ${token}` } : {}
     });
     setItems(response.data || []);
-  }, [API_BASE_URL]);
+  }, []);
 
   useEffect(() => {
     fetchEmployees().catch((error) => console.error(error));
@@ -35,7 +35,7 @@ function DeleteExisting() {
     try {
       setDeletingCode(employeeCode);
       const token = getAdminToken();
-      await axios.delete(`${API_BASE_URL}/api/employees/${employeeCode}`, {
+      await axios.delete(apiUrl(`/api/employees/${employeeCode}`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       await fetchEmployees();

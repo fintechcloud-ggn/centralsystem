@@ -3,13 +3,14 @@ import Contest1 from "./Contest1";
 import Contest2 from "./Contest2";
 import Contest3 from "./Contest3";
 import Contest4 from "./Contest4";
+import { apiUrl } from "../lib/api";
 
 function Carousel() {
   const [contests, setContests] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    fetch("http://localhost:5001/api/contests")
+    fetch(apiUrl("/api/contests"))
       .then((res) => res.json())
       .then((data) => {
         //Do not show contest after end date

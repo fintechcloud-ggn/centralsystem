@@ -10,9 +10,8 @@ const path = require("path");
 
 
 const envCandidates = [
-  path.resolve(__dirname, ".env"),
-  path.resolve(__dirname, "../src/.env"),
-  path.resolve(__dirname, "../.env")
+  path.resolve(__dirname, "../.env"),
+  path.resolve(__dirname, ".env")
 ];
 
 let envLoaded = false;
@@ -44,18 +43,19 @@ const requiredEnvVars = [
   "AWS_S3_BUCKET"
 ];
 
-const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
-if (missingEnvVars.length > 0) {
-  console.error(
-    `Missing required environment variables: ${missingEnvVars.join(", ")}`
-  );
-  process.exit(1);
-}
-
 if (!process.env.JWT_SECRET) {
   process.env.JWT_SECRET = "dev_jwt_secret_change_me";
   console.warn("JWT_SECRET not set. Using development fallback secret.");
 }
+
+const validateEnvironment = () => {
+  const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
+  if (missingEnvVars.length > 0) {
+    throw new Error(
+      `Missing required environment variables: ${missingEnvVars.join(", ")}`
+    );
+  }
+};
 
 // MySQL Connection
 const db = mysql.createPool({
@@ -874,21 +874,36 @@ app.delete("/api/contests/:id", authenticateAdmin, async (req, res) => {
 });
 
 
-//connections
-connectDb()
-  .then(() => {
-    console.log("MySQL connection established.");
-    return initializeAdminTable();
-  })
-  .then(() => initializeEmployeesTable())
-  .then(() => initializeContestsTable())
-  // .then(() => seedEmployeesTable())
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+let startupPromise;
+
+const initializeApp = () => {
+  if (!startupPromise) {
+    startupPromise = Promise.resolve()
+      .then(() => validateEnvironment())
+      .then(() => connectDb())
+      .then(() => {
+        console.log("MySQL connection established.");
+        return initializeAdminTable();
+      })
+      .then(() => initializeEmployeesTable())
+      .then(() => initializeContestsTable());
+      // .then(() => seedEmployeesTable())
+  }
+
+  return startupPromise;
+};
+
+if (require.main === module) {
+  initializeApp()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
+    })
+    .catch((error) => {
+      console.error("Startup failed:", error);
+      process.exit(1);
     });
-  })
-  .catch((error) => {
-    console.error("Startup failed:", error);
-    process.exit(1);
-  });
+}
+
+module.exports = { app, initializeApp };

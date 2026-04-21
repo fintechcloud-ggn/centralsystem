@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { getAdminToken } from "../components/adminAuth";
+import { apiUrl } from "../lib/api";
 
 const quickActions = [
   { label: "Add New Employee", to: "/admin/NewUser" },
@@ -13,7 +14,6 @@ const quickActions = [
 ];
 
 function AdminOverview() {
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5001";
   const EMPLOYEES_PER_PAGE = 10;
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +24,7 @@ function AdminOverview() {
     const fetchEmployees = async () => {
       try {
         const token = getAdminToken();
-        const response = await axios.get(`${API_BASE_URL}/api/employees`, {
+        const response = await axios.get(apiUrl("/api/employees"), {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
         setEmployees(response.data || []);
@@ -36,7 +36,7 @@ function AdminOverview() {
     };
 
     fetchEmployees();
-  }, [API_BASE_URL]);
+  }, []);
 
   const stats = useMemo(() => {
     const working = employees.filter((item) => item.status === "Working").length;

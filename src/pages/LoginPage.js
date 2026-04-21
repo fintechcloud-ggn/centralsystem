@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { setAdminToken, isAdminAuthenticated } from "../components/adminAuth";
+import { apiUrl } from "../lib/api";
 
 function Login() {
   const navigate = useNavigate();
@@ -10,9 +11,6 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
-
-  const API_BASE_URL =
-    process.env.REACT_APP_API_BASE_URL || "http://localhost:5001";
 
   const slides = [
     "Illustration2.png",
@@ -41,7 +39,7 @@ function Login() {
     setError("");
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/admin/login`, {
+      const response = await axios.post(apiUrl("/api/admin/login"), {
         email,
         password,
       });

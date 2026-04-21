@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { getAdminToken } from "../components/adminAuth";
+import { apiUrl } from "../lib/api";
 
 function DeleteContest() {
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5001";
   const [contests, setContests] = useState([]);
   const [query, setQuery] = useState("");
   const [confirmContest, setConfirmContest] = useState(null);
   const [deletingId, setDeletingId] = useState("");
 
   const fetchContests = useCallback(async () => {
-    const response = await axios.get(`${API_BASE_URL}/api/contests`);
+    const response = await axios.get(apiUrl("/api/contests"));
     setContests(response.data || []);
-  }, [API_BASE_URL]);
+  }, []);
 
   useEffect(() => {
     fetchContests().catch((error) => console.error(error));
@@ -31,7 +31,7 @@ function DeleteContest() {
     try {
       setDeletingId(contestId);
       const token = getAdminToken();
-      await axios.delete(`${API_BASE_URL}/api/contests/${contestId}`, {
+      await axios.delete(apiUrl(`/api/contests/${contestId}`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       await fetchContests();
