@@ -130,7 +130,10 @@ const linkClassName = ({ isActive }) =>
       label: "Overview",
       to: "/admin",
       iconType: "overview"
-    },
+    }
+  ];
+
+  const activityItems = [
     {
       label: "Activity Logs",
       to: "/admin/activity-logs",
@@ -177,7 +180,7 @@ const linkClassName = ({ isActive }) =>
     }
   ].filter((item) => !item.superUserOnly || canDelete);
 
-  const collapsedItems = [...commonItems, ...employeeItems, ...contestItems];
+  const collapsedItems = [...commonItems, ...employeeItems, ...contestItems, ...activityItems];
 
   const renderItem = (item) => (
     <li key={item.label}>
@@ -249,7 +252,9 @@ const linkClassName = ({ isActive }) =>
           <p className="mb-0.5 mt-3 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9d98bb]">
             Contest Menu
           </p>
-          <ul className="w-full space-y-0.5">{contestItems.map(renderItem)}</ul>
+          <ul className="w-full space-y-0.5">
+            {[...contestItems, ...activityItems].map(renderItem)}
+          </ul>
         </>
       )}
 
