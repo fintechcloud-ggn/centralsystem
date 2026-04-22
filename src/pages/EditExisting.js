@@ -20,6 +20,13 @@ const initialEditPayload = {
   selectedImageS3Key: ""
 };
 
+const getErrorMessage = (error, fallback) => {
+  const responseError = error?.response?.data?.error || error?.response?.data;
+  if (!responseError) return fallback;
+  if (typeof responseError === "string") return responseError;
+  return responseError.message || JSON.stringify(responseError);
+};
+
 function EditExisting() {
   const [records, setRecords] = useState([]);
   const [query, setQuery] = useState("");
@@ -126,7 +133,7 @@ function EditExisting() {
       setPhotoFile(null);
     } catch (error) {
       console.error(error);
-      alert(error?.response?.data?.error || "Photo upload failed");
+      alert(getErrorMessage(error, "Photo upload failed"));
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -143,7 +150,7 @@ function EditExisting() {
       closeModal();
     } catch (error) {
       console.error(error);
-      alert(error?.response?.data?.error || "Update failed");
+      alert(getErrorMessage(error, "Update failed"));
     } finally {
       setIsSaving(false);
     }

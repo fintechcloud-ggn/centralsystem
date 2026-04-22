@@ -14,6 +14,12 @@
     },
     "api/employees/bulk.js": {
       "includeFiles": "Backend/**"
+    },
+    "api/employees/[employeeCode].js": {
+      "includeFiles": "Backend/**"
+    },
+    "api/employees/[employeeCode]/photos.js": {
+      "includeFiles": "Backend/**"
     }
   },
   "rewrites": [

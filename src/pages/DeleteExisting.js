@@ -4,6 +4,13 @@ import { getAdminToken, isSuperUser } from "../components/adminAuth";
 import { apiUrl } from "../lib/api";
 import PaginationFooter from "../components/PaginationFooter";
 
+const getErrorMessage = (error, fallback) => {
+  const responseError = error?.response?.data?.error || error?.response?.data;
+  if (!responseError) return fallback;
+  if (typeof responseError === "string") return responseError;
+  return responseError.message || JSON.stringify(responseError);
+};
+
 function DeleteExisting() {
   const canDelete = isSuperUser();
   const [items, setItems] = useState([]);
@@ -67,7 +74,7 @@ function DeleteExisting() {
       setConfirmCode("");
     } catch (error) {
       console.error(error);
-      alert(error?.response?.data?.error || "Delete failed");
+      alert(getErrorMessage(error, "Delete failed"));
     } finally {
       setDeletingCode("");
     }
