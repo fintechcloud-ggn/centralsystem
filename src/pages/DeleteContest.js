@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { getAdminToken } from "../components/adminAuth";
+import { getAdminToken, isSuperUser } from "../components/adminAuth";
 import { apiUrl } from "../lib/api";
 import PaginationFooter from "../components/PaginationFooter";
 
 function DeleteContest() {
+  const canDelete = isSuperUser();
   const [contests, setContests] = useState([]);
   const [query, setQuery] = useState("");
   const [confirmContest, setConfirmContest] = useState(null);
@@ -47,6 +48,11 @@ function DeleteContest() {
   }, [currentPage, totalPages]);
 
   const handleDelete = async (contestId) => {
+    if (!canDelete) {
+      alert("Only super user can delete contests.");
+      return;
+    }
+
     try {
       setDeletingId(contestId);
       const token = getAdminToken();
@@ -62,6 +68,19 @@ function DeleteContest() {
       setDeletingId("");
     }
   };
+
+  if (!canDelete) {
+    return (
+      <section className="mx-auto w-full max-w-3xl">
+        <div className="rounded-[28px] border border-white/80 bg-white/80 p-7 text-center shadow-[0_18px_50px_rgba(148,163,184,0.12)]">
+          <h2 className="text-2xl font-bold text-slate-800">Permission Denied</h2>
+          <p className="mt-2 text-sm text-slate-500">
+            Only super user can delete contests. Please login with a super user account.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="mx-auto w-full max-w-6xl space-y-5 2xl:max-w-[90rem]">

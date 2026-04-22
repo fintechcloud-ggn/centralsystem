@@ -93,6 +93,28 @@ const query = (sql, values = []) =>
     });
   });
 
+const ADMIN_ROLES = {
+  SUPER_USER: "super_user",
+  ADMIN: "admin"
+};
+
+const normalizeAdminRole = (role) =>
+  role === ADMIN_ROLES.SUPER_USER ? ADMIN_ROLES.SUPER_USER : ADMIN_ROLES.ADMIN;
+
+const ensureColumnIfMissing = async (tableName, columnName, definition) => {
+  const allowedTables = new Set(["admin_users"]);
+  const allowedColumns = new Set(["role"]);
+
+  if (!allowedTables.has(tableName) || !allowedColumns.has(columnName)) {
+    throw new Error(`Unsafe migration target: ${tableName}.${columnName}`);
+  }
+
+  const rows = await query(`SHOW COLUMNS FROM ${tableName} LIKE ?`, [columnName]);
+  if (rows.length === 0) {
+    await query(`ALTER TABLE ${tableName} ADD COLUMN ${definition}`);
+  }
+};
+
 const parseSlashDate = (value) => {
   const match = String(value || "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
   if (!match) return null;
@@ -336,35 +358,123 @@ const initializeAdminTable = async () => {
       id INT AUTO_INCREMENT PRIMARY KEY,
       email VARCHAR(255) NOT NULL UNIQUE,
       password_hash VARCHAR(255) NOT NULL,
+      role VARCHAR(50) NOT NULL DEFAULT 'admin',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
 
   await query(createTableQuery);
+  await ensureColumnIfMissing(
+    "admin_users",
+    "role",
+    "role VARCHAR(50) NOT NULL DEFAULT 'admin' AFTER password_hash"
+  );
 
   const adminEmail = process.env.ADMIN_EMAIL;
   const adminPassword = process.env.ADMIN_PASSWORD;
+  const normalAdminEmail = process.env.NORMAL_ADMIN_EMAIL;
+  const normalAdminPassword = process.env.NORMAL_ADMIN_PASSWORD;
 
   if (!adminEmail || !adminPassword) {
     console.warn("ADMIN_EMAIL/ADMIN_PASSWORD not set; skipping default admin bootstrap.");
+  } else {
+    const existingAdmin = await query(
+      "SELECT id FROM admin_users WHERE email = ? LIMIT 1",
+      [adminEmail]
+    );
+
+    if (existingAdmin.length > 0) {
+      await query(
+        "UPDATE admin_users SET password_hash = ?, role = ? WHERE email = ?",
+        [adminPassword, ADMIN_ROLES.SUPER_USER, adminEmail]
+      );
+    } else {
+      await query(
+        "INSERT INTO admin_users (email, password_hash, role) VALUES (?, ?, ?)",
+        [adminEmail, adminPassword, ADMIN_ROLES.SUPER_USER]
+      );
+      console.log("Default super user created from environment variables.");
+    }
+  }
+
+  if (!normalAdminEmail || !normalAdminPassword) {
+    console.warn("NORMAL_ADMIN_EMAIL/NORMAL_ADMIN_PASSWORD not set; skipping normal admin bootstrap.");
     return;
   }
 
-  const existingAdmin = await query(
+  const existingNormalAdmin = await query(
     "SELECT id FROM admin_users WHERE email = ? LIMIT 1",
-    [adminEmail]
+    [normalAdminEmail]
   );
 
-  if (existingAdmin.length > 0) {
+  if (existingNormalAdmin.length > 0) {
+    await query(
+      "UPDATE admin_users SET password_hash = ?, role = ? WHERE email = ?",
+      [normalAdminPassword, ADMIN_ROLES.ADMIN, normalAdminEmail]
+    );
     return;
   }
 
   await query(
-    "INSERT INTO admin_users (email, password_hash) VALUES (?, ?)",
-    [adminEmail, adminPassword]
+    "INSERT INTO admin_users (email, password_hash, role) VALUES (?, ?, ?)",
+    [normalAdminEmail, normalAdminPassword, ADMIN_ROLES.ADMIN]
   );
-  console.log("Default admin user created from environment variables.");
+  console.log("Default normal admin created from environment variables.");
 };
+
+const initializeActivityLogsTable = async () => {
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS activity_logs (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      admin_id INT NULL,
+      admin_email VARCHAR(255) NULL,
+      admin_role VARCHAR(50) NULL,
+      action VARCHAR(100) NOT NULL,
+      entity_type VARCHAR(100) NULL,
+      entity_id VARCHAR(255) NULL,
+      details TEXT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_activity_created_at (created_at),
+      INDEX idx_activity_admin_email (admin_email)
+    )
+  `;
+
+  await query(createTableQuery);
+};
+
+let activityLogsInitPromise;
+
+const ensureActivityLogsReady = () => {
+  if (!activityLogsInitPromise) {
+    activityLogsInitPromise = initializeActivityLogsTable();
+  }
+
+  return activityLogsInitPromise;
+};
+
+const insertActivityLog = async (admin, activity) => {
+  try {
+    await ensureActivityLogsReady();
+    await query(
+      `INSERT INTO activity_logs
+       (admin_id, admin_email, admin_role, action, entity_type, entity_id, details)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        admin?.adminId || admin?.id || null,
+        admin?.email || null,
+        normalizeAdminRole(admin?.role),
+        activity.action,
+        activity.entityType || null,
+        activity.entityId ? String(activity.entityId) : null,
+        activity.details ? JSON.stringify(activity.details) : null
+      ]
+    );
+  } catch (error) {
+    console.warn("Activity log failed:", error.message);
+  }
+};
+
+const logActivity = (req, activity) => insertActivityLog(req.admin, activity);
 
 let adminInitPromise;
 
@@ -473,7 +583,7 @@ const seedEmployeesTable = async () => {
   ]);
 };
 
-const authenticateAdmin = (req, res, next) => {
+const authenticateAdmin = async (req, res, next) => {
   const authHeader = req.headers.authorization || "";
   const token = authHeader.startsWith("Bearer ")
     ? authHeader.split(" ")[1]
@@ -490,11 +600,34 @@ const authenticateAdmin = (req, res, next) => {
 
   try {
     const payload = jwt.verify(token, jwtSecret);
-    req.admin = payload;
+    await ensureAdminReady();
+
+    const adminRows = await query(
+      "SELECT id, email, role FROM admin_users WHERE id = ? OR email = ? LIMIT 1",
+      [payload.adminId || 0, payload.email || ""]
+    );
+
+    if (adminRows.length === 0) {
+      return res.status(401).json({ error: "Admin user not found" });
+    }
+
+    req.admin = {
+      adminId: adminRows[0].id,
+      email: adminRows[0].email,
+      role: normalizeAdminRole(adminRows[0].role)
+    };
     next();
   } catch (error) {
     return res.status(401).json({ error: "Invalid or expired token" });
   }
+};
+
+const requireSuperUser = (req, res, next) => {
+  if (normalizeAdminRole(req.admin?.role) !== ADMIN_ROLES.SUPER_USER) {
+    return res.status(403).json({ error: "Only super user can perform this action" });
+  }
+
+  next();
 };
 
 app.post("/api/admin/login", async (req, res) => {
@@ -508,7 +641,7 @@ app.post("/api/admin/login", async (req, res) => {
     await ensureAdminReady();
 
     const rows = await query(
-      "SELECT id, email, password_hash FROM admin_users WHERE email = ? LIMIT 1",
+      "SELECT id, email, password_hash, role FROM admin_users WHERE email = ? LIMIT 1",
       [email]
     );
 
@@ -517,6 +650,7 @@ app.post("/api/admin/login", async (req, res) => {
     }
 
     const admin = rows[0];
+    const adminRole = normalizeAdminRole(admin.role);
     const isMatch = password === admin.password_hash;
     if (!isMatch) {
       return res.status(401).json({ error: "Invalid email or password" });
@@ -528,12 +662,20 @@ app.post("/api/admin/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { adminId: admin.id, email: admin.email },
+      { adminId: admin.id, email: admin.email, role: adminRole },
       jwtSecret,
       { expiresIn: "8h" }
     );
 
-    return res.json({ token });
+    await insertActivityLog(
+      { id: admin.id, email: admin.email, role: adminRole },
+      { action: "admin_login", entityType: "admin_user", entityId: admin.id }
+    );
+
+    return res.json({
+      token,
+      admin: { id: admin.id, email: admin.email, role: adminRole }
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Server Error" });
@@ -542,6 +684,32 @@ app.post("/api/admin/login", async (req, res) => {
 
 app.get("/api/admin/verify", authenticateAdmin, (req, res) => {
   return res.json({ valid: true, admin: req.admin });
+});
+
+app.get("/api/activity-logs", authenticateAdmin, requireSuperUser, async (req, res) => {
+  try {
+    await ensureActivityLogsReady();
+    const rows = await query(
+      `SELECT
+        id,
+        admin_id,
+        admin_email,
+        admin_role,
+        action,
+        entity_type,
+        entity_id,
+        details,
+        created_at
+      FROM activity_logs
+      ORDER BY created_at DESC
+      LIMIT 500`
+    );
+
+    return res.json(rows);
+  } catch (error) {
+    console.error("Activity Logs Error:", error);
+    return res.status(500).json({ error: "Activity logs failed" });
+  }
 });
 
 app.get("/api/employees",  async (req, res) => {
@@ -664,6 +832,12 @@ app.post("/api/employees", authenticateAdmin, upload.single("image"), async (req
           [resolvedEmployeeCode, s3Key, uploadResult.Location],
           (photoErr) => {
             if (photoErr) return res.status(500).json(photoErr);
+            logActivity(req, {
+              action: "create_employee",
+              entityType: "employee",
+              entityId: resolvedEmployeeCode,
+              details: { employeeName: resolvedEmployeeName }
+            });
             return res.json({ message: "Employee Created Successfully" });
           }
         );
@@ -733,6 +907,17 @@ app.post("/api/employees/bulk", authenticateAdmin, async (req, res) => {
         });
       }
     }
+
+    await logActivity(req, {
+      action: "bulk_upload_employees",
+      entityType: "employee",
+      details: {
+        total: summary.total,
+        imported: summary.imported,
+        failed: summary.failed,
+        warnings: summary.warnings.length
+      }
+    });
 
     return res.json({
       message: "Bulk employee import finished",
@@ -812,6 +997,13 @@ app.put("/api/employees/:employeeCode", authenticateAdmin, async (req, res) => {
       return res.status(404).json({ error: "Employee not found" });
     }
 
+    await logActivity(req, {
+      action: "update_employee",
+      entityType: "employee",
+      entityId: employeeCode,
+      details: { fields: Object.keys(payload) }
+    });
+
     return res.json({ message: "Employee updated successfully" });
   } catch (error) {
     console.error(error);
@@ -870,6 +1062,13 @@ app.post("/api/employees/:employeeCode/photos", authenticateAdmin, upload.single
       [s3Key, uploadResult.Location, employeeCode]
     );
 
+    await logActivity(req, {
+      action: "upload_employee_photo",
+      entityType: "employee",
+      entityId: employeeCode,
+      details: { imageS3Key: s3Key }
+    });
+
     return res.json({
       message: "Photo uploaded successfully",
       photo: { employee_code: employeeCode, image_s3_key: s3Key, image_url: uploadResult.Location }
@@ -880,7 +1079,7 @@ app.post("/api/employees/:employeeCode/photos", authenticateAdmin, upload.single
   }
 });
 
-app.delete("/api/employees/:employeeCode", authenticateAdmin, async (req, res) => {
+app.delete("/api/employees/:employeeCode", authenticateAdmin, requireSuperUser, async (req, res) => {
   try {
     const { employeeCode } = req.params;
     await query("DELETE FROM employee_photos WHERE employee_code = ?", [employeeCode]);
@@ -889,6 +1088,12 @@ app.delete("/api/employees/:employeeCode", authenticateAdmin, async (req, res) =
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Employee not found" });
     }
+
+    await logActivity(req, {
+      action: "delete_employee",
+      entityType: "employee",
+      entityId: employeeCode
+    });
 
     return res.json({ message: "Employee deleted successfully" });
   } catch (error) {
@@ -998,6 +1203,13 @@ app.post("/api/contests", authenticateAdmin, async (req, res) => {
     ];
 
     const result = await query(sql, values);
+
+    await logActivity(req, {
+      action: "create_contest",
+      entityType: "contest",
+      entityId: result.insertId,
+      details: { title: title.trim(), category: category || "" }
+    });
 
     res.status(201).json({
       message: "Contest created successfully",
@@ -1109,6 +1321,13 @@ app.put("/api/contests/:id", authenticateAdmin, async (req, res) => {
       return res.status(404).json({ error: "Contest not found" });
     }
 
+    await logActivity(req, {
+      action: "update_contest",
+      entityType: "contest",
+      entityId: id,
+      details: { title: title.trim(), category: category || "" }
+    });
+
     return res.json({ message: "Contest updated successfully" });
   } catch (error) {
     console.error("Contest Update Error:", error);
@@ -1116,7 +1335,7 @@ app.put("/api/contests/:id", authenticateAdmin, async (req, res) => {
   }
 });
 
-app.delete("/api/contests/:id", authenticateAdmin, async (req, res) => {
+app.delete("/api/contests/:id", authenticateAdmin, requireSuperUser, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await query("DELETE FROM contests WHERE id = ?", [id]);
@@ -1124,6 +1343,12 @@ app.delete("/api/contests/:id", authenticateAdmin, async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Contest not found" });
     }
+
+    await logActivity(req, {
+      action: "delete_contest",
+      entityType: "contest",
+      entityId: id
+    });
 
     return res.json({ message: "Contest deleted successfully" });
   } catch (error) {
@@ -1148,6 +1373,7 @@ const initializeApp = ({ runMigrations = false } = {}) => {
   if (runMigrations) {
     return startupPromise
       .then(() => initializeAdminTable())
+      .then(() => initializeActivityLogsTable())
       .then(() => initializeEmployeesTable())
       .then(() => initializeContestsTable());
       // .then(() => seedEmployeesTable())

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import { getAdminToken } from "../components/adminAuth";
+import { getAdminToken, isSuperUser, setAdminRole } from "../components/adminAuth";
 import { apiUrl } from "../lib/api";
 import PaginationFooter from "../components/PaginationFooter";
 
@@ -9,9 +9,10 @@ const quickActions = [
   { label: "Add New Employee", to: "/admin/NewUser" },
   { label: "Add New Contest", to: "/admin/add-contest" },
   { label: "Edit Contest", to: "/admin/edit-contest" },
-  { label: "Delete Contest", to: "/admin/delete-contest" },
+  { label: "Delete Contest", to: "/admin/delete-contest", superUserOnly: true },
   { label: "Edit Employee", to: "/admin/edit-existing" },
-  { label: "Delete Employee", to: "/admin/delete-existing" }
+  { label: "Delete Employee", to: "/admin/delete-existing", superUserOnly: true },
+  { label: "Activity Logs", to: "/admin/activity-logs", superUserOnly: true }
 ];
 
 function AdminOverview() {
@@ -20,6 +21,10 @@ function AdminOverview() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [canDelete, setCanDelete] = useState(isSuperUser());
+  const visibleQuickActions = quickActions.filter(
+    (action) => !action.superUserOnly || canDelete
+  );
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -37,6 +42,25 @@ function AdminOverview() {
     };
 
     fetchEmployees();
+  }, []);
+
+  useEffect(() => {
+    const syncRole = async () => {
+      try {
+        const token = getAdminToken();
+        if (!token) return;
+        const response = await axios.get(apiUrl("/api/admin/verify"), {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const role = response.data?.admin?.role;
+        setAdminRole(role);
+        setCanDelete(role === "super_user");
+      } catch (error) {
+        setCanDelete(isSuperUser());
+      }
+    };
+
+    syncRole();
   }, []);
 
   const stats = useMemo(() => {
@@ -110,7 +134,7 @@ function AdminOverview() {
           Employee widgets now update from live database records.
         </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-          {quickActions.map((action) => (
+          {visibleQuickActions.map((action) => (
             <Link
               key={action.label}
               to={action.to}

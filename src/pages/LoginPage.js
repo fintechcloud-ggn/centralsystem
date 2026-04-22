@@ -48,7 +48,7 @@ function Login() {
         password,
       });
 
-      setAdminToken(response.data.token);
+      setAdminToken(response.data.token, response.data.admin);
       toast.success("Login Successful");
       navigate("/admin", { replace: true });
     } catch (loginError) {

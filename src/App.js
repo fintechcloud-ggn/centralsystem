@@ -10,6 +10,7 @@ import EditContest from './pages/EditContest';
 import DeleteContest from './pages/DeleteContest';
 import EditExisting from './pages/EditExisting';
 import DeleteExisting from './pages/DeleteExisting';
+import ActivityLogs from './pages/ActivityLogs';
 import { Toaster } from "react-hot-toast";
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 function App() {
@@ -34,6 +35,7 @@ function App() {
     <Route path="delete-contest" element={<DeleteContest/>}/>
     <Route path="edit-existing" element={<EditExisting/>}/>
     <Route path="delete-existing" element={<DeleteExisting/>}/>
+    <Route path="activity-logs" element={<ActivityLogs/>}/>
     </Route>
   </Routes>
   </>

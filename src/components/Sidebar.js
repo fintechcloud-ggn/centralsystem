@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { clearAdminToken } from "./adminAuth";
+import axios from "axios";
+import { clearAdminToken, getAdminToken, isSuperUser, setAdminRole } from "./adminAuth";
+import { apiUrl } from "../lib/api";
 
 function MenuIcon({ children, className = "h-5 w-5" }) {
   return (
@@ -59,6 +62,16 @@ function MenuGlyph({ type }) {
     );
   }
 
+  if (type === "logs") {
+    return (
+      <MenuIcon>
+        <path d="M4 6h16" />
+        <path d="M4 12h16" />
+        <path d="M4 18h10" />
+      </MenuIcon>
+    );
+  }
+
   return (
     <MenuIcon>
       <path d="M4 7h16M10 11v6M14 11v6" />
@@ -70,6 +83,26 @@ function MenuGlyph({ type }) {
 
 function Sidebar({ closeSidebar, collapsed = false }) {
   const navigate = useNavigate();
+  const [canDelete, setCanDelete] = useState(isSuperUser());
+
+  useEffect(() => {
+    const syncRole = async () => {
+      try {
+        const token = getAdminToken();
+        if (!token) return;
+        const response = await axios.get(apiUrl("/api/admin/verify"), {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const role = response.data?.admin?.role;
+        setAdminRole(role);
+        setCanDelete(role === "super_user");
+      } catch (error) {
+        setCanDelete(isSuperUser());
+      }
+    };
+
+    syncRole();
+  }, []);
 
   const handleLogout = () => {
     clearAdminToken();
@@ -97,8 +130,14 @@ const linkClassName = ({ isActive }) =>
       label: "Overview",
       to: "/admin",
       iconType: "overview"
+    },
+    {
+      label: "Activity Logs",
+      to: "/admin/activity-logs",
+      iconType: "logs",
+      superUserOnly: true
     }
-  ];
+  ].filter((item) => !item.superUserOnly || canDelete);
 
   const employeeItems = [
     {
@@ -114,9 +153,10 @@ const linkClassName = ({ isActive }) =>
     {
       label: "Delete Employee",
       to: "/admin/delete-existing",
-      iconType: "delete"
+      iconType: "delete",
+      superUserOnly: true
     }
-  ];
+  ].filter((item) => !item.superUserOnly || canDelete);
 
   const contestItems = [
     {
@@ -132,9 +172,10 @@ const linkClassName = ({ isActive }) =>
     {
       label: "Delete Contest",
       to: "/admin/delete-contest",
-      iconType: "delete"
+      iconType: "delete",
+      superUserOnly: true
     }
-  ];
+  ].filter((item) => !item.superUserOnly || canDelete);
 
   const collapsedItems = [...commonItems, ...employeeItems, ...contestItems];
 
