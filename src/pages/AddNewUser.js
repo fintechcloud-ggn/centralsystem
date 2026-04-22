@@ -4,6 +4,18 @@ import * as XLSX from "xlsx";
 import { getAdminToken } from "../components/adminAuth";
 import toast from "react-hot-toast";
 import { apiUrl } from "../lib/api";
+
+const BULK_UPLOAD_BATCH_SIZE = 10;
+
+const createBulkSummary = (total) => ({
+  total,
+  processed: 0,
+  imported: 0,
+  failed: 0,
+  errors: [],
+  warnings: []
+});
+
 function NewUser() {
   const initialFormData = {
     employeeCode: "",
@@ -112,16 +124,38 @@ function NewUser() {
       setBulkResult(null);
       const rows = await parseBulkFile(bulkFile);
       const token = getAdminToken();
-      const response = await axios.post(
-        apiUrl("/api/employees/bulk"),
-        { rows },
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        }
-      );
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const summary = createBulkSummary(rows.length);
 
-      setBulkResult(response.data);
-      toast.success(`Imported ${response.data.imported} employees`);
+      if (rows.length === 0) {
+        toast.error("No employee rows found in file");
+        return;
+      }
+
+      setBulkResult(summary);
+
+      for (let startIndex = 0; startIndex < rows.length; startIndex += BULK_UPLOAD_BATCH_SIZE) {
+        const batchRows = rows.slice(startIndex, startIndex + BULK_UPLOAD_BATCH_SIZE);
+        const response = await axios.post(
+          apiUrl("/api/employees/bulk"),
+          {
+            rows: batchRows,
+            startRow: startIndex + 2
+          },
+          { headers }
+        );
+
+        const batchResult = response.data || {};
+        summary.processed += batchRows.length;
+        summary.imported += Number(batchResult.imported || 0);
+        summary.failed += Number(batchResult.failed || 0);
+        summary.errors = summary.errors.concat(batchResult.errors || []);
+        summary.warnings = summary.warnings.concat(batchResult.warnings || []);
+
+        setBulkResult({ ...summary });
+      }
+
+      toast.success(`Imported ${summary.imported} employees`);
       setBulkFile(null);
     } catch (error) {
       console.error(error);
@@ -174,6 +208,24 @@ function NewUser() {
               Imported {bulkResult.imported} of {bulkResult.total} rows
               {bulkResult.failed ? `, ${bulkResult.failed} failed` : ""}
             </p>
+            {isBulkUploading && (
+              <div className="mt-3">
+                <div className="h-2 overflow-hidden rounded-full bg-white">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#7c6cff] to-[#c17cff] transition-all"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.round(((bulkResult.processed || 0) / Math.max(1, bulkResult.total)) * 100)
+                      )}%`
+                    }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  Processed {bulkResult.processed || 0} of {bulkResult.total} rows
+                </p>
+              </div>
+            )}
             {bulkResult.errors?.length > 0 && (
               <div className="mt-3 max-h-36 overflow-auto rounded-2xl bg-white/80 p-3">
                 {bulkResult.errors.slice(0, 20).map((item) => (

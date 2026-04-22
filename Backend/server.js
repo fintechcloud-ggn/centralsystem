@@ -79,6 +79,7 @@ AWS.config.update({
 });
 
 const s3 = new AWS.S3();
+const IMAGE_DOWNLOAD_TIMEOUT_MS = 8000;
 
 // Multer Setup
 const upload = multer({
@@ -231,6 +232,29 @@ const getFirstValue = (row, keys) => {
   return "";
 };
 
+const splitImageUrls = (value) =>
+  String(value || "")
+    .split(/[\n;,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const getBulkImageUrls = (row) => {
+  const imageKeys = new Set(["imageurl", "photo", "photourl", "image", "employeeimage"]);
+  const urls = [];
+
+  Object.entries(row).forEach(([key, value]) => {
+    const isImageKey =
+      imageKeys.has(key) ||
+      /^(image|photo|photourl|imageurl|employeeimage)[0-9]+$/.test(key);
+
+    if (isImageKey) {
+      urls.push(...splitImageUrls(value));
+    }
+  });
+
+  return [...new Set(urls)];
+};
+
 const normalizeBulkEmployeeRow = (rawRow) => {
   const row = {};
   Object.entries(rawRow || {}).forEach(([key, value]) => {
@@ -255,17 +279,31 @@ const normalizeBulkEmployeeRow = (rawRow) => {
     doj: getFirstValue(row, ["doj", "dateofjoining", "dateofjoiningdoj", "joiningdate"]),
     status: getFirstValue(row, ["status"]) || "Working",
     biometricStatus: getFirstValue(row, ["biometricstatus", "biometric"]) || "Active",
-    imageUrl: getFirstValue(row, ["imageurl", "photo", "photourl", "image", "employeeimage"])
+    imageUrls: getBulkImageUrls(row)
   };
 };
 
-const uploadEmployeeImageFromUrl = async (employeeCode, imageUrl) => {
+const uploadEmployeeImageFromUrl = async (employeeCode, imageUrl, imageIndex = 0) => {
   const normalizedUrl = String(imageUrl || "").trim();
   if (!normalizedUrl) {
     return { s3Key: null, location: null };
   }
 
-  const response = await fetch(normalizedUrl);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), IMAGE_DOWNLOAD_TIMEOUT_MS);
+  let response;
+
+  try {
+    response = await fetch(normalizedUrl, { signal: controller.signal });
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("Image download timed out");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+
   if (!response.ok) {
     throw new Error(`Image download failed with status ${response.status}`);
   }
@@ -279,7 +317,7 @@ const uploadEmployeeImageFromUrl = async (employeeCode, imageUrl) => {
         ? "gif"
         : "jpg";
   const buffer = Buffer.from(await response.arrayBuffer());
-  const s3Key = `${employeeCode}/${Date.now()}_bulk_image.${extension}`;
+  const s3Key = `${employeeCode}/${Date.now()}_${imageIndex}_bulk_image.${extension}`;
   const uploadResult = await s3.upload({
     Bucket: process.env.AWS_S3_BUCKET,
     Key: s3Key,
@@ -290,7 +328,9 @@ const uploadEmployeeImageFromUrl = async (employeeCode, imageUrl) => {
   return { s3Key, location: uploadResult.Location };
 };
 
-const upsertBulkEmployee = async (employee, imageData) => {
+const upsertBulkEmployee = async (employee, imageDataList = []) => {
+  const primaryImage = imageDataList[0] || { s3Key: null, location: null };
+
   await query(
     `INSERT INTO employees (
       employee_code,
@@ -338,12 +378,16 @@ const upsertBulkEmployee = async (employee, imageData) => {
       employee.doj,
       employee.status,
       employee.biometricStatus,
-      imageData.s3Key,
-      imageData.location
+      primaryImage.s3Key,
+      primaryImage.location
     ]
   );
 
-  if (imageData.s3Key && imageData.location) {
+  for (const imageData of imageDataList) {
+    if (!imageData.s3Key || !imageData.location) {
+      continue;
+    }
+
     await query(
       `INSERT IGNORE INTO employee_photos (employee_code, image_s3_key, image_url)
        VALUES (?, ?, ?)`,
@@ -853,6 +897,9 @@ app.post("/api/employees", authenticateAdmin, upload.single("image"), async (req
 app.post("/api/employees/bulk", authenticateAdmin, async (req, res) => {
   try {
     const rows = Array.isArray(req.body?.rows) ? req.body.rows : [];
+    const startRow = Number.isInteger(Number(req.body?.startRow))
+      ? Number(req.body.startRow)
+      : 2;
 
     if (rows.length === 0) {
       return res.status(400).json({ error: "No employee rows found in file" });
@@ -884,25 +931,32 @@ app.post("/api/employees/bulk", authenticateAdmin, async (req, res) => {
           throw new Error("DOJ is required in yyyy-mm-dd format");
         }
 
-        let imageData = { s3Key: null, location: null };
-        try {
-          imageData = await uploadEmployeeImageFromUrl(
-            employee.employeeCode,
-            employee.imageUrl
-          );
-        } catch (imageError) {
-          summary.warnings.push({
-            row: index + 2,
-            message: `Image skipped: ${imageError.message || "download failed"}`
-          });
+        const imageDataList = [];
+        for (const [imageIndex, imageUrl] of employee.imageUrls.entries()) {
+          try {
+            const imageData = await uploadEmployeeImageFromUrl(
+              employee.employeeCode,
+              imageUrl,
+              imageIndex + 1
+            );
+
+            if (imageData.s3Key && imageData.location) {
+              imageDataList.push(imageData);
+            }
+          } catch (imageError) {
+            summary.warnings.push({
+              row: startRow + index,
+              message: `Image skipped: ${imageError.message || "download failed"}`
+            });
+          }
         }
 
-        await upsertBulkEmployee(employee, imageData);
+        await upsertBulkEmployee(employee, imageDataList);
         summary.imported += 1;
       } catch (error) {
         summary.failed += 1;
         summary.errors.push({
-          row: index + 2,
+          row: startRow + index,
           message: error.message || "Import failed"
         });
       }

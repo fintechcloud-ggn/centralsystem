@@ -13,7 +13,8 @@
       "includeFiles": "Backend/**"
     },
     "api/employees/bulk.js": {
-      "includeFiles": "Backend/**"
+      "includeFiles": "Backend/**",
+      "maxDuration": 60
     },
     "api/employees/[employeeCode].js": {
       "includeFiles": "Backend/**"
