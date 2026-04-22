@@ -169,15 +169,15 @@ function BirthdayCard({ user }) {
 
 function AnniversaryCard({ user }) {
   return (
-    <div className="relative h-full w-full overflow-hidden bg-white">
-      <div className="absolute inset-y-0 left-0 w-[73%] bg-[#650044]" />
-      <div className="absolute inset-y-0 right-0 w-[27%] bg-white" />
-      <div className="absolute inset-y-0 left-[71%] hidden w-5 bg-[#b19435] md:block" />
+    <div className="relative h-full w-full overflow-y-auto overflow-x-hidden bg-[#650044] md:overflow-hidden md:bg-white">
+      <div className="absolute inset-y-0 left-0 w-full bg-[#650044] md:w-[73%]" />
+      <div className="absolute inset-y-0 right-0 hidden w-[27%] bg-white md:block" />
+      <div className="absolute inset-y-0 left-[71%] hidden w-5 bg-[#b19435] md:block 2xl:w-7" />
 
-      <div className="relative z-10 flex min-h-[100dvh] flex-col gap-5 px-5 py-8 sm:px-10 md:h-full md:flex-row md:items-center md:px-12 lg:px-16">
-        <div className="flex min-h-[45dvh] flex-1 flex-col justify-center text-center md:w-[52%] md:text-left">
+      <div className="relative z-10 flex min-h-[100dvh] flex-col gap-6 px-5 py-7 sm:px-8 sm:py-10 md:h-full md:flex-row md:items-center md:gap-[clamp(1.5rem,3vw,4rem)] md:px-[clamp(3rem,5vw,7rem)] md:py-[clamp(2rem,4vh,5rem)] min-[1800px]:gap-[5vw] min-[1800px]:px-[8vw]">
+        <div className="flex min-h-0 flex-1 flex-col justify-center text-center md:w-[52%] md:text-left">
           <h1
-            className="text-4xl font-bold leading-tight text-[#e0c74e] sm:text-5xl md:text-6xl lg:text-7xl"
+            className="text-[clamp(2.35rem,10vw,4.5rem)] font-bold leading-[1.08] text-[#e0c74e] md:text-[clamp(3.75rem,5vw,7.5rem)]"
             style={{ fontFamily: "Georgia, serif" }}
           >
             Happy
@@ -186,39 +186,39 @@ function AnniversaryCard({ user }) {
           </h1>
 
           <h2
-            className="mt-8 break-words text-4xl font-bold text-white sm:text-5xl md:text-6xl"
+            className="mt-[clamp(1.25rem,4vw,2.5rem)] break-words text-[clamp(2rem,8vw,4rem)] font-bold leading-tight text-white md:text-[clamp(3rem,4vw,6rem)]"
             style={{ fontFamily: "Georgia, serif" }}
           >
             Dear {user.employee_name}
           </h2>
 
-          <p className="mx-auto mt-7 max-w-2xl text-lg font-medium leading-7 text-white/90 sm:text-xl md:mx-0 md:text-2xl">
+          <p className="mx-auto mt-[clamp(1rem,3vw,2rem)] max-w-2xl text-[clamp(1rem,4vw,1.35rem)] font-medium leading-relaxed text-white/90 md:mx-0 md:max-w-[58rem] md:text-[clamp(1.25rem,1.6vw,2.15rem)]">
             Thank you for being such a valuable member of our team.
             <br />
             Wishing you the best for continued success!
           </p>
 
           {user.anniversaryYears > 0 && (
-            <p className="mt-5 text-base font-semibold uppercase tracking-[0.24em] text-[#e0c74e]">
+            <p className="mt-[clamp(1rem,3vw,1.75rem)] text-[clamp(0.78rem,2.6vw,1rem)] font-semibold uppercase tracking-[0.18em] text-[#e0c74e] sm:tracking-[0.24em] md:text-[clamp(1rem,1vw,1.45rem)]">
               {user.anniversaryYears} Year{user.anniversaryYears === 1 ? "" : "s"} With Us
             </p>
           )}
         </div>
 
-        <div className="relative flex min-h-[40dvh] flex-1 items-center justify-center md:w-[48%]">
+        <div className="relative flex min-h-0 flex-1 items-center justify-center py-3 md:w-[48%] md:py-0">
           <DecorativeBranches />
-          <div className="absolute left-0 top-1/2 hidden h-[30rem] w-[30rem] -translate-x-20 -translate-y-1/2 rounded-full border-4 border-[#b19435] md:block" />
-          <div className="absolute left-0 top-1/2 hidden h-[28rem] w-[28rem] -translate-x-24 -translate-y-1/2 rounded-full border border-[#e0c74e]/70 md:block" />
-          <div className="absolute left-4 top-1/2 hidden -translate-x-24 -translate-y-1/2 grid-cols-8 gap-2 md:grid">
+          <div className="absolute left-0 top-1/2 hidden h-[clamp(23rem,38vw,48rem)] w-[clamp(23rem,38vw,48rem)] -translate-x-[clamp(4rem,8vw,10rem)] -translate-y-1/2 rounded-full border-4 border-[#b19435] md:block min-[1800px]:border-[6px]" />
+          <div className="absolute left-0 top-1/2 hidden h-[clamp(21rem,36vw,45rem)] w-[clamp(21rem,36vw,45rem)] -translate-x-[clamp(5rem,9vw,12rem)] -translate-y-1/2 rounded-full border border-[#e0c74e]/70 md:block min-[1800px]:border-2" />
+          <div className="absolute left-4 top-1/2 hidden -translate-x-[clamp(5rem,9vw,12rem)] -translate-y-1/2 grid-cols-8 gap-2 md:grid min-[1800px]:gap-3">
             {Array.from({ length: 120 }).map((_, index) => (
               <span
                 key={`gold-dot-${index}`}
-                className="h-1 w-1 rounded-full bg-[#e0c74e]"
+                className="h-1 w-1 rounded-full bg-[#e0c74e] min-[1800px]:h-1.5 min-[1800px]:w-1.5"
               />
             ))}
           </div>
 
-          <div className="relative z-10 h-[18rem] w-[18rem] overflow-hidden rounded-[50%] border-4 border-[#b19435] bg-[#f2bed0] shadow-2xl sm:h-[24rem] sm:w-[24rem] md:h-[28rem] md:w-[28rem] lg:h-[32rem] lg:w-[32rem]">
+          <div className="relative z-10 h-[clamp(15rem,72vw,24rem)] w-[clamp(15rem,72vw,24rem)] overflow-hidden rounded-[50%] border-4 border-[#b19435] bg-[#f2bed0] shadow-2xl md:h-[clamp(24rem,34vw,46rem)] md:w-[clamp(24rem,34vw,46rem)] min-[1800px]:border-[7px]">
             <EmployeeImage
               user={user}
               className="h-full w-full object-cover"
