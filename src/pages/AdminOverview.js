@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { getAdminToken } from "../components/adminAuth";
 import { apiUrl } from "../lib/api";
+import PaginationFooter from "../components/PaginationFooter";
 
 const quickActions = [
   { label: "Add New Employee", to: "/admin/NewUser" },
@@ -14,11 +15,11 @@ const quickActions = [
 ];
 
 function AdminOverview() {
-  const EMPLOYEES_PER_PAGE = 10;
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -39,10 +40,16 @@ function AdminOverview() {
   }, []);
 
   const stats = useMemo(() => {
-    const working = employees.filter((item) => item.status === "Working").length;
-    const biometricActive = employees.filter((item) => item.biometric_status === "Active").length;
-    const maleCount = employees.filter((item) => item.gender === "Male").length;
-    const femaleCount = employees.filter((item) => item.gender === "Female").length;
+    const normalize = (value) => String(value || "").trim().toLowerCase();
+    const currentStatuses = new Set(["working", "active"]);
+    const inactiveStatuses = new Set(["inactive", "resigned", "left", "terminated"]);
+    const working = employees.filter((item) => {
+      const status = normalize(item.status);
+      return currentStatuses.has(status) || (status && !inactiveStatuses.has(status));
+    }).length;
+    const biometricActive = employees.filter((item) => normalize(item.biometric_status) === "active").length;
+    const maleCount = employees.filter((item) => normalize(item.gender) === "male").length;
+    const femaleCount = employees.filter((item) => normalize(item.gender) === "female").length;
 
     return [
       { label: "Employees", value: String(employees.length), change: "Total records" },
@@ -78,15 +85,15 @@ function AdminOverview() {
     );
   }, [employees, searchTerm]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / EMPLOYEES_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / rowsPerPage));
   const paginatedEmployees = useMemo(() => {
-    const startIndex = (currentPage - 1) * EMPLOYEES_PER_PAGE;
-    return filteredEmployees.slice(startIndex, startIndex + EMPLOYEES_PER_PAGE);
-  }, [currentPage, filteredEmployees, EMPLOYEES_PER_PAGE]);
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    return filteredEmployees.slice(startIndex, startIndex + rowsPerPage);
+  }, [currentPage, filteredEmployees, rowsPerPage]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, rowsPerPage]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -95,14 +102,14 @@ function AdminOverview() {
   }, [currentPage, totalPages]);
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-4 sm:space-y-6 2xl:mx-auto 2xl:max-w-7xl">
       <div className="rounded-[28px] border border-white/80 bg-gradient-to-r from-[#f7f6fd] via-[#f8f5fb] to-[#efe5ff] p-6 text-slate-700 shadow-[0_18px_50px_rgba(148,163,184,0.12)] md:p-8">
         <p className="text-xs uppercase tracking-[0.25em] text-[#9d98bb]">Control Center</p>
         <h2 className="mt-2 text-2xl font-semibold md:text-3xl">Welcome back, Admin</h2>
         <p className="mt-2 max-w-2xl text-sm text-slate-500 md:text-base">
           Employee widgets now update from live database records.
         </p>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
           {quickActions.map((action) => (
             <Link
               key={action.label}
@@ -181,42 +188,13 @@ function AdminOverview() {
           )}
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
-          <button
-            type="button"
-            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            className="rounded-full border border-[#ece9f8] bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-[#f8f7fc] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Previous
-          </button>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-              <button
-                key={page}
-                type="button"
-                onClick={() => setCurrentPage(page)}
-                className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${
-                  currentPage === page
-                    ? "bg-gradient-to-r from-[#ff9f6f] to-[#f17dac] text-white"
-                    : "border border-[#ece9f8] bg-white text-slate-700 hover:bg-[#f8f7fc]"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            className="rounded-full border border-[#ece9f8] bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-[#f8f7fc] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
+        <PaginationFooter
+          currentPage={currentPage}
+          totalItems={filteredEmployees.length}
+          rowsPerPage={rowsPerPage}
+          onPageChange={setCurrentPage}
+          onRowsPerPageChange={setRowsPerPage}
+        />
       </div>
     </section>
   );

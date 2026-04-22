@@ -11,6 +11,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const slides = [
     "Illustration2.png",
@@ -36,7 +37,10 @@ function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (isLoggingIn) return;
+
     setError("");
+    setIsLoggingIn(true);
 
     try {
       const response = await axios.post(apiUrl("/api/admin/login"), {
@@ -54,14 +58,16 @@ function Login() {
           ? responseError
           : responseError?.message || "Invalid Email or Password";
       setError(message);
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f3f4f6] to-[#dbe7df] flex items-center justify-center p-6">
-      <div className="w-full max-w-5xl h-[550px] mx-auto bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden flex">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-gradient-to-br from-[#f3f4f6] to-[#dbe7df] p-4 sm:p-6 2xl:p-10">
+      <div className="mx-auto flex min-h-[min(620px,calc(100dvh-2rem))] w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.15)] sm:rounded-3xl 2xl:max-w-6xl">
         {/* LEFT SIDE - CAROUSEL */}
-        <div className="hidden lg:flex w-1/2 bg-[#cfe3d6] items-center justify-center p-14 overflow-hidden">
+        <div className="hidden w-1/2 items-center justify-center overflow-hidden bg-[#cfe3d6] p-8 lg:flex xl:p-14">
           <div className="text-center max-w-md w-full">
             {/* Carousel */}
             <div className="relative w-full overflow-hidden">
@@ -79,7 +85,7 @@ function Login() {
                     <img
                       src={slide}
                       alt={`slide-${index}`}
-                      className="w-80 pointer-events-none select-none"
+                      className="w-full max-w-80 pointer-events-none select-none"
                       draggable="false"
                     />
                   </div>
@@ -114,10 +120,10 @@ function Login() {
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="flex flex-1 items-center justify-center bg-white p-14">
+        <div className="flex flex-1 items-center justify-center bg-white p-6 sm:p-10 lg:p-14">
           <div className="w-full max-w-md">
-            <div className="text-center mb-12">
-              <h1 className="text-4xl font-semibold tracking-wide text-[#1f2d2a]">
+            <div className="mb-8 text-center sm:mb-12">
+              <h1 className="text-3xl font-semibold tracking-wide text-[#1f2d2a] sm:text-4xl">
                 Fintech <span className="text-[#4a7c59]">Cloud</span>
               </h1>
             </div>
@@ -132,7 +138,8 @@ function Login() {
                   placeholder="Username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-12 px-4 rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#4a7c59]"
+                  disabled={isLoggingIn}
+                  className="w-full h-12 px-4 rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#4a7c59] disabled:cursor-not-allowed disabled:opacity-70"
                   required
                 />
               </div>
@@ -146,7 +153,8 @@ function Login() {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-12 px-4 rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#4a7c59]"
+                  disabled={isLoggingIn}
+                  className="w-full h-12 px-4 rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#4a7c59] disabled:cursor-not-allowed disabled:opacity-70"
                   required
                 />
               </div>
@@ -155,9 +163,13 @@ function Login() {
 
               <button
                 type="submit"
-                className="w-full h-12 bg-gradient-to-r from-[#2f5d50] to-[#1f3d35] text-white rounded-lg font-semibold hover:opacity-90 transition"
+                disabled={isLoggingIn}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#2f5d50] to-[#1f3d35] font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-80"
               >
-                Sign In
+                {isLoggingIn && (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                )}
+                {isLoggingIn ? "Signing in..." : "Sign In"}
               </button>
             </form>
           </div>

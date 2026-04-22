@@ -2,12 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { getAdminToken } from "../components/adminAuth";
 import { apiUrl } from "../lib/api";
+import PaginationFooter from "../components/PaginationFooter";
 
 function DeleteContest() {
   const [contests, setContests] = useState([]);
   const [query, setQuery] = useState("");
   const [confirmContest, setConfirmContest] = useState(null);
   const [deletingId, setDeletingId] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const fetchContests = useCallback(async () => {
     const response = await axios.get(apiUrl("/api/contests"));
@@ -27,6 +30,22 @@ function DeleteContest() {
     );
   }, [contests, query]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredContests.length / rowsPerPage));
+  const paginatedContests = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    return filteredContests.slice(startIndex, startIndex + rowsPerPage);
+  }, [currentPage, filteredContests, rowsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, rowsPerPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   const handleDelete = async (contestId) => {
     try {
       setDeletingId(contestId);
@@ -45,7 +64,7 @@ function DeleteContest() {
   };
 
   return (
-    <section className="mx-auto w-full max-w-6xl space-y-5">
+    <section className="mx-auto w-full max-w-6xl space-y-5 2xl:max-w-[90rem]">
       <div className="rounded-[28px] border border-white/80 bg-gradient-to-r from-[#f7f6fd] via-[#f8f5fb] to-[#efe5ff] p-5 shadow-[0_18px_50px_rgba(148,163,184,0.12)] md:p-7">
         <h2 className="text-2xl font-bold text-slate-800">Delete Contest</h2>
         <p className="mt-1 text-sm text-slate-500">
@@ -60,8 +79,8 @@ function DeleteContest() {
         />
       </div>
 
-      <div className="overflow-x-auto rounded-[28px] border border-white/80 bg-white/70 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm">
-        <table className="min-w-full text-sm">
+      <div className="w-full overflow-x-auto rounded-[28px] border border-white/80 bg-white/70 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm">
+        <table className="w-full min-w-[900px] text-sm">
           <thead className="bg-[#f8f7fc] text-left text-slate-500">
             <tr>
               <th className="px-4 py-3 font-medium">Title</th>
@@ -74,7 +93,7 @@ function DeleteContest() {
           </thead>
           <tbody>
             {filteredContests.length > 0 ? (
-              filteredContests.map((contest) => (
+              paginatedContests.map((contest) => (
                 <tr key={contest.id} className="border-t border-[#efedf8]">
                   <td className="px-4 py-3 font-medium text-slate-800">{contest.title}</td>
                   <td className="px-4 py-3 text-slate-700">{contest.category}</td>
@@ -104,6 +123,14 @@ function DeleteContest() {
         </table>
       </div>
 
+      <PaginationFooter
+        currentPage={currentPage}
+        totalItems={filteredContests.length}
+        rowsPerPage={rowsPerPage}
+        onPageChange={setCurrentPage}
+        onRowsPerPageChange={setRowsPerPage}
+      />
+
       {confirmContest && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-[#e6e2f4]/70 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-[28px] border border-white/80 bg-white/85 p-6 shadow-[0_18px_60px_rgba(148,163,184,0.18)] backdrop-blur-xl">
@@ -114,7 +141,7 @@ function DeleteContest() {
             <p className="mt-2 text-sm text-red-600">
               This will permanently remove the contest from the database and carousel.
             </p>
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={() => setConfirmContest(null)}

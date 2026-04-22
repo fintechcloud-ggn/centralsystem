@@ -29,28 +29,28 @@ function Contest2({ previewData }) {
   ];
 
   return (
-    <div className="w-full h-full bg-white p-2 md:p-4 overflow-hidden flex items-center justify-center">
-      <div className="w-full h-full rounded-2xl bg-[#efe5d7] border-4 border-[#d9d0c4] shadow-2xl overflow-hidden">
-        <div className="h-full grid grid-cols-2 gap-4 p-4 md:p-5">
+    <div className="flex min-h-full w-full items-center justify-center overflow-y-auto bg-white p-2 md:p-4 xl:overflow-hidden">
+      <div className="min-h-full w-full rounded-2xl border-4 border-[#d9d0c4] bg-[#efe5d7] shadow-2xl xl:h-full xl:overflow-hidden">
+        <div className="grid min-h-full grid-cols-1 gap-4 p-3 sm:p-4 md:p-5 xl:h-full xl:grid-cols-2">
           <section className="relative rounded-2xl bg-[#f8f5ef] border-2 border-[#e8dfd2] px-4 md:px-8 py-5 md:py-7 flex flex-col">
             <div className="absolute -top-2 left-8 w-20 h-3 bg-[#efe5d7] rotate-[-3deg]" />
             <div className="absolute -top-2 right-8 w-20 h-3 bg-[#efe5d7] rotate-[3deg]" />
 
             <div className="mx-auto text-center">
-              <h2 className="text-[#f2643a] text-4xl md:text-6xl font-black uppercase tracking-wide leading-none">
+              <h2 className="text-3xl font-black uppercase leading-none tracking-wide text-[#f2643a] sm:text-4xl md:text-6xl">
                 {previewData?.title || "Photography"}
               </h2>
-              <h1 className="mt-1 text-black text-5xl md:text-7xl font-black uppercase leading-none">
+              <h1 className="mt-1 text-4xl font-black uppercase leading-none text-black sm:text-5xl md:text-7xl">
                 Contest
               </h1>
             </div>
 
-            <p className="mt-8 text-center text-[#f2643a] text-2xl md:text-4xl font-extrabold leading-tight">
+            <p className="mt-5 text-center text-2xl font-extrabold leading-tight text-[#f2643a] md:mt-8 md:text-4xl">
               {previewData?.description ||
                 "Join the Challenge & Show Your Talent!"}
             </p>
 
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-end">
+            <div className="mt-5 grid grid-cols-1 items-end gap-4 md:mt-8 md:grid-cols-3 md:gap-6">
               <div className="md:col-span-2">
                 <p className="text-[#8f7fbe] text-xl md:text-3xl font-extrabold leading-tight">
                   Join the contest
@@ -78,7 +78,7 @@ function Contest2({ previewData }) {
               </div>
             </div>
 
-            <div className="mt-auto pt-6 border-t-2 border-[#ded4c6] flex items-center justify-between text-[#221f1d]">
+            <div className="mt-auto flex flex-col gap-2 border-t-2 border-[#ded4c6] pt-6 text-[#221f1d] sm:flex-row sm:items-center sm:justify-between">
               <div className="font-black uppercase text-sm md:text-base">
                 Talent
                 <br />

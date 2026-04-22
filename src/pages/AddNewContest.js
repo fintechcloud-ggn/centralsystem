@@ -94,8 +94,8 @@ const handleSubmit = async (event) => {
   };
 
  return (
-    <section className="mx-auto w-full max-w-5xl">
-      <div className="grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
+    <section className="mx-auto w-full max-w-5xl 2xl:max-w-7xl">
+      <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
         
         <div className="rounded-[28px] border border-white/80 bg-white/70 p-5 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm md:p-7">
           <h2 className="text-2xl font-bold text-slate-900">Add New Contest</h2>
@@ -224,7 +224,7 @@ const handleSubmit = async (event) => {
 <div className="grid gap-3">
 
   {/* First */}
-  <div className="flex gap-2">
+  <div className="flex flex-col gap-2 sm:flex-row">
     <input
       type="text"
       name="firstPlace"
@@ -239,12 +239,12 @@ const handleSubmit = async (event) => {
       value={formData.firstPoints}
       onChange={handleChange}
       placeholder="Points"
-      className="w-28 rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5"
+      className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 sm:w-32"
     />
   </div>
 
   {/* Second */}
-  <div className="flex gap-2">
+  <div className="flex flex-col gap-2 sm:flex-row">
     <input
       type="text"
       name="secondPlace"
@@ -259,12 +259,12 @@ const handleSubmit = async (event) => {
       value={formData.secondPoints}
       onChange={handleChange}
       placeholder="Points"
-      className="w-28 rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5"
+      className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 sm:w-32"
     />
   </div>
 
   {/* Third */}
-  <div className="flex gap-2">
+  <div className="flex flex-col gap-2 sm:flex-row">
     <input
       type="text"
       name="thirdPlace"
@@ -279,7 +279,7 @@ const handleSubmit = async (event) => {
       value={formData.thirdPoints}
       onChange={handleChange}
       placeholder="Points"
-      className="w-28 rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5"
+      className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 sm:w-32"
     />
   </div>
 
@@ -304,8 +304,8 @@ const handleSubmit = async (event) => {
         <aside className="rounded-[28px] border border-white/80 bg-white/70 p-5 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm md:p-6">
           <h3 className="text-lg font-semibold text-slate-900">Preview</h3>
 
-<div className="mt-4 h-[180px] w-[260px] overflow-hidden rounded-[24px] bg-[#f8f7fc] flex items-center justify-center">
-  <div className="scale-[0.26] origin-center">
+<div className="mt-4 flex aspect-[10/7] w-full max-w-[420px] items-center justify-center overflow-hidden rounded-[24px] bg-[#f8f7fc]">
+  <div className="scale-[0.22] origin-center sm:scale-[0.3] xl:scale-[0.28] 2xl:scale-[0.38]">
     <div className="w-[1000px] h-[700px]">
       {renderPreview()}
     </div>

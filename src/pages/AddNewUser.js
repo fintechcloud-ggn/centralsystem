@@ -88,7 +88,7 @@ function NewUser() {
 
   const parseBulkFile = async (file) => {
     const fileBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(fileBuffer, { type: "array", raw: false });
+    const workbook = XLSX.read(fileBuffer, { type: "array", raw: true });
     const firstSheetName = workbook.SheetNames[0];
 
     if (!firstSheetName) {
@@ -97,7 +97,7 @@ function NewUser() {
 
     return XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
       defval: "",
-      raw: false
+      raw: true
     });
   };
 
@@ -134,7 +134,7 @@ function NewUser() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-5">
+    <div className="mx-auto w-full max-w-5xl space-y-4 sm:space-y-5 2xl:max-w-7xl">
       <div className="rounded-[28px] border border-white/80 bg-gradient-to-r from-[#f7f6fd] via-[#f8f5fb] to-[#efe5ff] p-5 text-slate-700 shadow-[0_18px_50px_rgba(148,163,184,0.12)] md:p-6">
         <h2 className="text-2xl font-bold text-slate-800">Add New Employee</h2>
         <p className="mt-1 text-sm text-slate-500">
@@ -150,12 +150,12 @@ function NewUser() {
               Upload CSV or Excel with Employee Code, Employee Name, Company, Department, Division, Location, Designation, Employment Type, Gender, Date of Birth, DOJ, Status, Biometric Status, and Image URL.
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
             <input
               type="file"
               accept=".csv,.xlsx,.xls"
               onChange={(event) => setBulkFile(event.target.files?.[0] || null)}
-              className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 text-sm sm:w-80"
+              className="w-full min-w-0 rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 text-sm sm:w-80"
             />
             <button
               type="button"
@@ -375,7 +375,7 @@ function NewUser() {
             />
           </div>
 
-          <div className="flex justify-between pt-4">
+          <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-between">
             <button
               type="button"
               onClick={handleCancel}

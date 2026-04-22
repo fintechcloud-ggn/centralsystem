@@ -93,6 +93,42 @@ const query = (sql, values = []) =>
     });
   });
 
+const parseSlashDate = (value) => {
+  const match = String(value || "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if (!match) return null;
+
+  const [, firstPart, secondPart, yearPart] = match;
+  const first = Number(firstPart);
+  const second = Number(secondPart);
+  const yearNumber =
+    yearPart.length === 2
+      ? Number(yearPart) + (Number(yearPart) >= 70 ? 1900 : 2000)
+      : Number(yearPart);
+
+  if (first < 1 || first > 31 || second < 1 || second > 31) {
+    return null;
+  }
+
+  const isClearlyDayFirst = first > 12;
+  const day = isClearlyDayFirst ? first : second;
+  const month = isClearlyDayFirst ? second : first;
+  const date = new Date(Date.UTC(yearNumber, month - 1, day));
+
+  if (
+    date.getUTCFullYear() !== yearNumber ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return {
+    day: String(day).padStart(2, "0"),
+    month: String(month).padStart(2, "0"),
+    year: String(yearNumber)
+  };
+};
+
 const toDdMmYy = (value) => {
   if (!value) return null;
   const raw = String(value).trim();
@@ -114,13 +150,23 @@ const toDdMmYy = (value) => {
     return `${day}${month}${year}`;
   }
 
+  const slashDate = parseSlashDate(raw);
+  if (slashDate) {
+    return `${slashDate.day}${slashDate.month}${slashDate.year.slice(-2)}`;
+  }
+
   return null;
 };
 
 const toIsoDate = (value) => {
   if (!value) return null;
   const raw = String(value).trim();
-  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return raw;
+  }
+
+  const slashDate = parseSlashDate(raw);
+  return slashDate ? `${slashDate.year}-${slashDate.month}-${slashDate.day}` : null;
 };
 
 const sanitizeFileName = (value) =>
@@ -184,7 +230,7 @@ const normalizeBulkEmployeeRow = (rawRow) => {
     employmentType: getFirstValue(row, ["employmenttype", "type"]) || "Permanent",
     gender: getFirstValue(row, ["gender"]) || "Male",
     dateOfBirth: getFirstValue(row, ["dateofbirth", "dob", "birthdate", "birthday"]),
-    doj: getFirstValue(row, ["doj", "dateofjoining", "joiningdate"]),
+    doj: getFirstValue(row, ["doj", "dateofjoining", "dateofjoiningdoj", "joiningdate"]),
     status: getFirstValue(row, ["status"]) || "Working",
     biometricStatus: getFirstValue(row, ["biometricstatus", "biometric"]) || "Active",
     imageUrl: getFirstValue(row, ["imageurl", "photo", "photourl", "image", "employeeimage"])
@@ -642,7 +688,8 @@ app.post("/api/employees/bulk", authenticateAdmin, async (req, res) => {
       total: rows.length,
       imported: 0,
       failed: 0,
-      errors: []
+      errors: [],
+      warnings: []
     };
 
     for (const [index, row] of rows.entries()) {
@@ -663,10 +710,18 @@ app.post("/api/employees/bulk", authenticateAdmin, async (req, res) => {
           throw new Error("DOJ is required in yyyy-mm-dd format");
         }
 
-        const imageData = await uploadEmployeeImageFromUrl(
-          employee.employeeCode,
-          employee.imageUrl
-        );
+        let imageData = { s3Key: null, location: null };
+        try {
+          imageData = await uploadEmployeeImageFromUrl(
+            employee.employeeCode,
+            employee.imageUrl
+          );
+        } catch (imageError) {
+          summary.warnings.push({
+            row: index + 2,
+            message: `Image skipped: ${imageError.message || "download failed"}`
+          });
+        }
 
         await upsertBulkEmployee(employee, imageData);
         summary.imported += 1;

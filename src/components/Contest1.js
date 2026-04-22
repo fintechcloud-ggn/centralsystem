@@ -50,18 +50,18 @@ function Contest1({ previewData }) {
   ];
 
   return (
-    <div className="w-full h-full bg-[#f6f6f8] flex items-center justify-center overflow-hidden p-2 md:p-4">
-      <div className="relative w-full h-full rounded-2xl shadow-2xl bg-[#efeff1] border border-[#d9d9de] overflow-hidden flex flex-col">
+    <div className="flex min-h-full w-full items-center justify-center overflow-y-auto bg-[#f6f6f8] p-2 md:p-4 xl:overflow-hidden">
+      <div className="relative flex min-h-full w-full rounded-2xl border border-[#d9d9de] bg-[#efeff1] shadow-2xl xl:h-full xl:overflow-hidden">
 
         <div className="absolute -top-20 left-0 right-0 h-52 bg-[#5f0689] rotate-[-8deg] origin-left" />
         <div className="absolute top-28 -left-10 right-0 h-24 bg-white/90 rotate-[-7deg]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.9),_rgba(220,220,225,0.75)_60%,_rgba(210,210,216,0.9))]" />
         <div className="absolute bottom-0 left-0 right-0 h-36 bg-[#f2bb2f]" />
 
-        <div className="relative z-10 h-full px-3 md:px-6 py-4 md:py-6 flex flex-col md:flex-row gap-4 md:gap-6">
+        <div className="relative z-10 flex min-h-full w-full flex-col gap-4 px-3 py-4 md:px-6 md:py-6 xl:h-full xl:flex-row xl:gap-6">
 
           {/* LEFT SIDE */}
-          <section className="w-full md:w-1/2 rounded-2xl border border-white/60 bg-white/60 backdrop-blur-[1px] p-3 md:p-5 flex flex-col">
+          <section className="flex w-full flex-col rounded-2xl border border-white/60 bg-white/60 p-3 backdrop-blur-[1px] md:p-5 xl:w-1/2">
 
             <div className="flex justify-center mb-3 md:mb-4">
               <div className="relative inline-flex flex-col items-center">
@@ -88,7 +88,7 @@ function Contest1({ previewData }) {
             </div>
 
             {/* STEPS */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3 md:mt-4 flex-1">
+            <div className="mt-3 grid flex-1 grid-cols-1 gap-3 sm:grid-cols-3 md:mt-4">
               {steps.map((step) => (
                 <div key={step.id} className="relative text-center">
 
@@ -143,7 +143,7 @@ function Contest1({ previewData }) {
           </section>
 
           {/* RIGHT SIDE LEADERBOARD */}
-          <section className="w-full md:w-1/2 rounded-2xl border border-[#d6d2e3] bg-[#f8f6fc]/95 p-4 md:p-6 flex flex-col">
+          <section className="flex w-full flex-col rounded-2xl border border-[#d6d2e3] bg-[#f8f6fc]/95 p-4 md:p-6 xl:w-1/2">
 
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-[#2f1048] text-2xl md:text-4xl font-black uppercase tracking-wide">

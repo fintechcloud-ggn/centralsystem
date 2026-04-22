@@ -6,7 +6,7 @@ const isLocalApiBaseUrl = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(
 
 export const API_BASE_URL =
   process.env.NODE_ENV === "development"
-    ? envApiBaseUrl || localApiBaseUrl
+    ? localApiBaseUrl
     : isLocalApiBaseUrl
       ? ""
       : envApiBaseUrl.replace(/\/$/, "");

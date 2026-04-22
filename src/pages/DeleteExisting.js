@@ -2,12 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { getAdminToken } from "../components/adminAuth";
 import { apiUrl } from "../lib/api";
+import PaginationFooter from "../components/PaginationFooter";
 
 function DeleteExisting() {
   const [items, setItems] = useState([]);
   const [query, setQuery] = useState("");
   const [deletingCode, setDeletingCode] = useState("");
   const [confirmCode, setConfirmCode] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const fetchEmployees = useCallback(async () => {
     const token = getAdminToken();
@@ -31,6 +34,22 @@ function DeleteExisting() {
     [items, query]
   );
 
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / rowsPerPage));
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    return filteredItems.slice(startIndex, startIndex + rowsPerPage);
+  }, [currentPage, filteredItems, rowsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, rowsPerPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   const handleDelete = async (employeeCode) => {
     try {
       setDeletingCode(employeeCode);
@@ -49,7 +68,7 @@ function DeleteExisting() {
   };
 
   return (
-    <section className="mx-auto w-full max-w-6xl space-y-5">
+    <section className="mx-auto w-full max-w-6xl space-y-5 2xl:max-w-[90rem]">
       <div className="rounded-[28px] border border-white/80 bg-gradient-to-r from-[#f7f6fd] via-[#f8f5fb] to-[#efe5ff] p-5 shadow-[0_18px_50px_rgba(148,163,184,0.12)] md:p-7">
         <h2 className="text-2xl font-bold text-slate-800">Delete Employee</h2>
         <p className="mt-1 text-sm text-slate-500">
@@ -64,8 +83,8 @@ function DeleteExisting() {
         />
       </div>
 
-      <div className="overflow-x-auto rounded-[28px] border border-white/80 bg-white/70 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm">
-        <table className="min-w-full text-sm">
+      <div className="w-full overflow-x-auto rounded-[28px] border border-white/80 bg-white/70 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm">
+        <table className="w-full min-w-[900px] text-sm">
           <thead className="bg-[#f8f7fc] text-left text-slate-500">
             <tr>
               <th className="px-4 py-3 font-medium">Employee Code</th>
@@ -78,7 +97,7 @@ function DeleteExisting() {
           </thead>
           <tbody>
             {filteredItems.length > 0 ? (
-              filteredItems.map((item) => (
+              paginatedItems.map((item) => (
                 <tr key={item.employee_code} className="border-t border-[#efedf8]">
                   <td className="px-4 py-3 font-medium text-slate-800">{item.employee_code}</td>
                   <td className="px-4 py-3 text-slate-700">{item.employee_name}</td>
@@ -108,6 +127,14 @@ function DeleteExisting() {
         </table>
       </div>
 
+      <PaginationFooter
+        currentPage={currentPage}
+        totalItems={filteredItems.length}
+        rowsPerPage={rowsPerPage}
+        onPageChange={setCurrentPage}
+        onRowsPerPageChange={setRowsPerPage}
+      />
+
       {confirmCode && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-[#e6e2f4]/70 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-[28px] border border-white/80 bg-white/85 p-6 shadow-[0_18px_60px_rgba(148,163,184,0.18)] backdrop-blur-xl">
@@ -118,7 +145,7 @@ function DeleteExisting() {
             <p className="mt-2 text-sm text-red-600">
               This will permanently remove employee details, and his/her birthday and anniversary will not be visible.
             </p>
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={() => setConfirmCode("")}

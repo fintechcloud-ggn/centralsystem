@@ -29,16 +29,16 @@ function Contest3({ previewData }) {
   ];
 
   return (
-    <div className="w-full h-full bg-white p-2 md:p-4 overflow-hidden flex items-center justify-center">
-      <div className="w-full h-full rounded-2xl overflow-hidden border-4 border-[#4f0303] shadow-2xl">
-        <div className="h-full grid grid-cols-2 gap-4 p-4 bg-[#5e0308]">
-          <section className="relative rounded-2xl p-6 md:p-8 overflow-hidden bg-[radial-gradient(circle_at_bottom_right,_#f2bf21_0%,_#7e0a10_28%,_#62070b_58%,_#4f0307_100%)] border-2 border-[#8f141b]">
-            <div className="absolute -left-12 top-8 w-56 h-56 rounded-full border-[14px] border-[#f5c034] bg-[conic-gradient(from_0deg,#ef1616_0_12%,#fff7e6_12%_24%,#ef1616_24%_36%,#fff7e6_36%_48%,#ef1616_48%_60%,#fff7e6_60%_72%,#ef1616_72%_84%,#fff7e6_84%_100%)] shadow-xl" />
+    <div className="flex min-h-full w-full items-center justify-center overflow-y-auto bg-white p-2 md:p-4 xl:overflow-hidden">
+      <div className="min-h-full w-full rounded-2xl border-4 border-[#4f0303] shadow-2xl xl:h-full xl:overflow-hidden">
+        <div className="grid min-h-full grid-cols-1 gap-4 bg-[#5e0308] p-3 sm:p-4 xl:h-full xl:grid-cols-2">
+          <section className="relative overflow-hidden rounded-2xl border-2 border-[#8f141b] bg-[radial-gradient(circle_at_bottom_right,_#f2bf21_0%,_#7e0a10_28%,_#62070b_58%,_#4f0307_100%)] p-4 sm:p-6 md:p-8">
+            <div className="absolute -left-16 top-6 h-44 w-44 rounded-full border-[12px] border-[#f5c034] bg-[conic-gradient(from_0deg,#ef1616_0_12%,#fff7e6_12%_24%,#ef1616_24%_36%,#fff7e6_36%_48%,#ef1616_48%_60%,#fff7e6_60%_72%,#ef1616_72%_84%,#fff7e6_84%_100%)] shadow-xl sm:-left-12 sm:top-8 sm:h-56 sm:w-56 sm:border-[14px]" />
             <div className="absolute -top-3 right-4 w-12 h-12 rounded-full bg-[#f5c034] opacity-90" />
             <div className="absolute bottom-8 right-10 w-7 h-7 rounded-full bg-[#f5c034] opacity-80" />
             <div className="absolute bottom-4 left-8 w-16 h-16 rounded-full border-4 border-[#f5c034] opacity-70" />
-            <div className="relative z-10 pl-36 pt-8">
-              <h2 className="text-white text-4xl md:text-5xl font-black uppercase leading-none tracking-wide">
+            <div className="relative z-10 pl-20 pt-6 sm:pl-36 sm:pt-8">
+              <h2 className="text-3xl font-black uppercase leading-none tracking-wide text-white sm:text-4xl md:text-5xl">
                 {previewData?.title || "Contest"}
               </h2>
               <h1 className="mt-2 text-[#ffeb1c] text-2xl md:text-2xl font-black uppercase leading-none tracking-wide">
@@ -47,14 +47,14 @@ function Contest3({ previewData }) {
                {/* <h1 className="mt-2 text-[#ffeb1c] text-2xl md:text-2xl font-black uppercase leading-none tracking-wide">
                Compete. Create. Conquer.
               </h1> */}
-              <p className="mt-3 text-[#f6d9b5] text-2xl md:text-3xl font-semibold uppercase">
+              <p className="mt-3 text-xl font-semibold uppercase text-[#f6d9b5] sm:text-2xl md:text-3xl">
                 {previewData?.description || "Join the Challenge & Show Your Talent!"}
               </p>
             </div>
 
-            <div className="relative z-10 mt-10 px-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-full bg-[#f6f2e9] text-[#53150d] text-center py-2.5 text-3xl md:text-4xl font-bold">
+            <div className="relative z-10 mt-8 px-0 sm:px-4 md:mt-10">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                <div className="rounded-full bg-[#f6f2e9] py-2.5 text-center text-2xl font-bold text-[#53150d] md:text-4xl">
                   {contestDate || "20/06/2027"}
                 </div>
                 {contestTime ? (
@@ -68,11 +68,11 @@ function Contest3({ previewData }) {
               </div>
             </div>
 
-            <div className="relative z-10 mt-20 text-center">
-              <p className="text-white text-5xl md:text-6xl font-black uppercase tracking-wide">
+            <div className="relative z-10 mt-12 text-center md:mt-20">
+              <p className="text-3xl font-black uppercase tracking-wide text-white sm:text-5xl md:text-6xl">
                 - Grand Prize -
               </p>
-              <p className="text-[#ffeb1c] text-8xl md:text-9xl font-black leading-none mt-2">
+              <p className="mt-2 break-words text-5xl font-black leading-none text-[#ffeb1c] sm:text-7xl md:text-9xl">
                 {previewData?.prize || "$0"}
               </p>
             </div>

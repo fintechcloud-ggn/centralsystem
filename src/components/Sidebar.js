@@ -169,7 +169,7 @@ const linkClassName = ({ isActive }) =>
 
   return (
     <aside
-      className={`flex min-h-screen w-full flex-col bg-gradient-to-b from-[#ebe6fb] via-[#f6f5fb] to-[#eef3ff] p-4 text-slate-800 shadow-[0_18px_60px_rgba(148,163,184,0.18)] md:p-5 ${
+      className={`scrollbar-hidden flex h-[100dvh] w-full flex-col overflow-y-auto overscroll-contain bg-gradient-to-b from-[#ebe6fb] via-[#f6f5fb] to-[#eef3ff] p-4 text-slate-800 shadow-[0_18px_60px_rgba(148,163,184,0.18)] md:p-5 ${
         collapsed ? "md:items-center" : ""
       }`}
     >
@@ -224,7 +224,7 @@ const linkClassName = ({ isActive }) =>
       <button
         type="button"
         onClick={handleLogout}
-        className={`mt-auto h-11 w-full rounded-xl border border-white/80 bg-white/70 px-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-white hover:text-slate-900 ${
+        className={`mt-4 h-11 w-full shrink-0 rounded-xl border border-white/80 bg-white/70 px-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-white hover:text-slate-900 ${
           collapsed
             ? "flex items-center justify-center"
             : "grid grid-cols-[2.5rem_minmax(0,1fr)] items-center text-left"
