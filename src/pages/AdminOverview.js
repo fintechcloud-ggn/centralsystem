@@ -20,7 +20,7 @@ function AdminOverview() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState("all");
   const [canDelete, setCanDelete] = useState(isSuperUser());
   const visibleQuickActions = quickActions.filter(
     (action) => !action.superUserOnly || canDelete
@@ -109,11 +109,13 @@ function AdminOverview() {
     );
   }, [employees, searchTerm]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / rowsPerPage));
+  const isShowingAllRows = rowsPerPage === "all";
+  const totalPages = isShowingAllRows ? 1 : Math.max(1, Math.ceil(filteredEmployees.length / rowsPerPage));
   const paginatedEmployees = useMemo(() => {
+    if (isShowingAllRows) return filteredEmployees;
     const startIndex = (currentPage - 1) * rowsPerPage;
     return filteredEmployees.slice(startIndex, startIndex + rowsPerPage);
-  }, [currentPage, filteredEmployees, rowsPerPage]);
+  }, [currentPage, filteredEmployees, isShowingAllRows, rowsPerPage]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -198,17 +200,50 @@ function AdminOverview() {
           <p>Page {currentPage} of {totalPages}</p>
         </div> */}
 
-        <div className="mt-4 space-y-2 text-sm text-slate-600">
-          {paginatedEmployees.map((item) => (
-            <p key={item.employee_code} className="rounded-2xl bg-[#f8f7fc] px-4 py-3">
-              {item.employee_code} - {item.employee_name} ({item.designation || "-"})
-            </p>
-          ))}
+        <div className="mt-4 overflow-x-auto rounded-2xl border border-[#ece9f8] bg-white/70">
+          <table className="min-w-[1280px] w-full text-left text-sm text-slate-600">
+            <thead className="bg-[#f8f7fc] text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-4 py-3 font-semibold">Code</th>
+                <th className="px-4 py-3 font-semibold">Name</th>
+                <th className="px-4 py-3 font-semibold">Company</th>
+                <th className="px-4 py-3 font-semibold">Department</th>
+                <th className="px-4 py-3 font-semibold">Division</th>
+                <th className="px-4 py-3 font-semibold">Location</th>
+                <th className="px-4 py-3 font-semibold">Designation</th>
+                <th className="px-4 py-3 font-semibold">Type</th>
+                <th className="px-4 py-3 font-semibold">Gender</th>
+                <th className="px-4 py-3 font-semibold">DOB</th>
+                <th className="px-4 py-3 font-semibold">DOJ</th>
+                <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold">Biometric</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedEmployees.map((item) => (
+                <tr key={item.employee_code} className="border-t border-[#efedf8]">
+                  <td className="px-4 py-3 font-medium text-slate-900">{item.employee_code || "-"}</td>
+                  <td className="px-4 py-3">{item.employee_name || "-"}</td>
+                  <td className="px-4 py-3">{item.company || "-"}</td>
+                  <td className="px-4 py-3">{item.department || "-"}</td>
+                  <td className="px-4 py-3">{item.division || "-"}</td>
+                  <td className="px-4 py-3">{item.location || "-"}</td>
+                  <td className="px-4 py-3">{item.designation || "-"}</td>
+                  <td className="px-4 py-3">{item.employment_type || "-"}</td>
+                  <td className="px-4 py-3">{item.gender || "-"}</td>
+                  <td className="px-4 py-3">{item.date_of_birth || "-"}</td>
+                  <td className="px-4 py-3">{item.doj ? String(item.doj).slice(0, 10) : "-"}</td>
+                  <td className="px-4 py-3">{item.status || "-"}</td>
+                  <td className="px-4 py-3">{item.biometric_status || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           {!loading && employees.length > 0 && filteredEmployees.length === 0 && (
-            <p className="rounded-2xl bg-[#f8f7fc] px-4 py-3">No employees match your search.</p>
+            <p className="px-4 py-6 text-center text-sm text-slate-500">No employees match your search.</p>
           )}
           {!loading && employees.length === 0 && (
-            <p className="rounded-2xl bg-[#f8f7fc] px-4 py-3">No employees found yet.</p>
+            <p className="px-4 py-6 text-center text-sm text-slate-500">No employees found yet.</p>
           )}
         </div>
 

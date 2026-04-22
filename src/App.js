@@ -1,5 +1,6 @@
 import './App.css';
 import BirthdayCard from './components/BirthdayCard';
+import AnniversaryCardPage from './pages/AnniversaryCardPage';
 import AdminPanel from './pages/Admin_Panel';
 import { Route, Routes } from 'react-router-dom';
 import Login from './pages/LoginPage';
@@ -19,6 +20,8 @@ function App() {
 <Toaster position="top-center" reverseOrder={false} />
   <Routes>
      <Route path="/" element={<BirthdayCard/>}/>
+     <Route path="/anniversary" element={<AnniversaryCardPage/>}/>
+     <Route path="/anniversary-card" element={<AnniversaryCardPage/>}/>
      <Route path="/login" element={<Login/>}/>
     <Route
       path="/admin"

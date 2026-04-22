@@ -78,7 +78,7 @@ AWS.config.update({
   region: process.env.AWS_REGION
 });
 
-const s3 = new AWS.S3();
+const s3 = new AWS.S3({ signatureVersion: "v4" });
 const IMAGE_DOWNLOAD_TIMEOUT_MS = 8000;
 
 // Multer Setup
@@ -198,8 +198,48 @@ const sanitizeFileName = (value) =>
     .replace(/\s+/g, "_")
     .replace(/[^a-zA-Z0-9._-]/g, "");
 
+const normalizeS3Key = (value) => {
+  const rawKey = String(value || "")
+    .trim()
+    .replace(/^\/+/, "");
+  const bucketName = String(process.env.AWS_S3_BUCKET || "").trim();
+
+  if (bucketName && rawKey.startsWith(`${bucketName}/`)) {
+    return rawKey.slice(bucketName.length + 1);
+  }
+
+  return rawKey;
+};
+
+const getS3KeyCandidates = (imageS3Key, imageUrl) => {
+  const candidates = [normalizeS3Key(imageS3Key), normalizeS3Key(getS3KeyFromImageUrl(imageUrl))]
+    .filter(Boolean);
+
+  return [...new Set(candidates)];
+};
+
+const getS3ObjectByCandidates = async (imageS3Key, imageUrl) => {
+  const candidates = getS3KeyCandidates(imageS3Key, imageUrl);
+  let lastError;
+
+  for (const key of candidates) {
+    try {
+      const object = await s3.getObject({
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: key
+      }).promise();
+
+      return { key, object };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error("No S3 key candidates found");
+};
+
 const getSignedImageUrl = (imageS3Key, fallbackUrl = null) => {
-  const normalizedKey = String(imageS3Key || "").trim();
+  const normalizedKey = normalizeS3Key(imageS3Key);
   if (!normalizedKey) {
     return fallbackUrl;
   }
@@ -216,11 +256,40 @@ const getSignedImageUrl = (imageS3Key, fallbackUrl = null) => {
   }
 };
 
+const getS3KeyFromImageUrl = (imageUrl) => {
+  const normalizedUrl = String(imageUrl || "").trim();
+  if (!normalizedUrl) return "";
+
+  try {
+    const parsedUrl = new URL(normalizedUrl);
+    if (!parsedUrl.hostname.includes("amazonaws.com")) {
+      return "";
+    }
+
+    const pathKey = decodeURIComponent(parsedUrl.pathname.replace(/^\/+/, ""));
+    return normalizeS3Key(pathKey);
+  } catch (error) {
+    return "";
+  }
+};
+
+const resolveImageS3Key = (imageS3Key, imageUrl) =>
+  normalizeS3Key(imageS3Key) || getS3KeyFromImageUrl(imageUrl);
+
 const attachSignedImageUrls = (rows = []) =>
-  rows.map((row) => ({
-    ...row,
-    image_url: getSignedImageUrl(row.image_s3_key, row.image_url)
-  }));
+  rows.map((row) => {
+    const resolvedImageS3Key = resolveImageS3Key(row.image_s3_key, row.image_url);
+
+    return {
+      ...row,
+      image_s3_key: resolvedImageS3Key || row.image_s3_key,
+      original_image_url: row.image_url,
+      image_proxy_path: resolvedImageS3Key
+        ? `/api/images?key=${encodeURIComponent(resolvedImageS3Key)}`
+        : null,
+      image_url: getSignedImageUrl(resolvedImageS3Key, row.image_url)
+    };
+  });
 
 const getFirstValue = (row, keys) => {
   for (const key of keys) {
@@ -730,6 +799,132 @@ app.get("/api/admin/verify", authenticateAdmin, (req, res) => {
   return res.json({ valid: true, admin: req.admin });
 });
 
+app.get("/api/images", async (req, res) => {
+  try {
+    const imageS3Key = String(req.query?.key || "").trim();
+    const fallbackUrl = String(req.query?.url || "").trim();
+
+    if (!imageS3Key) {
+      if (fallbackUrl) {
+        return res.redirect(fallbackUrl);
+      }
+      return res.status(400).json({ error: "Image key is required" });
+    }
+
+    const { object: s3Object } = await getS3ObjectByCandidates(imageS3Key, fallbackUrl);
+
+    res.setHeader("Content-Type", s3Object.ContentType || "image/jpeg");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    return res.send(s3Object.Body);
+  } catch (error) {
+    console.error("Image proxy failed:", error);
+    const fallbackUrl = String(req.query?.url || "").trim();
+    if (fallbackUrl) {
+      return res.redirect(fallbackUrl);
+    }
+    return res.status(404).json({ error: "Image not found" });
+  }
+});
+
+app.get("/api/images/employee/:employeeCode", async (req, res) => {
+  try {
+    const { employeeCode } = req.params;
+    const rows = await query(
+      `SELECT image_s3_key, image_url
+       FROM employee_photos
+       WHERE LOWER(TRIM(employee_code)) = LOWER(TRIM(?))
+       ORDER BY id DESC
+       LIMIT 1`,
+      [employeeCode]
+    );
+
+    let imageS3Key = rows[0]?.image_s3_key;
+    let imageUrl = rows[0]?.image_url;
+
+    if (!imageS3Key && !imageUrl) {
+      const employeeRows = await query(
+        `SELECT image_s3_key, image_url
+         FROM employees
+         WHERE LOWER(TRIM(employee_code)) = LOWER(TRIM(?))
+         LIMIT 1`,
+        [employeeCode]
+      );
+
+      imageS3Key = employeeRows[0]?.image_s3_key;
+      imageUrl = employeeRows[0]?.image_url;
+    }
+
+    const resolvedImageS3Key = resolveImageS3Key(imageS3Key, imageUrl);
+    if (!resolvedImageS3Key) {
+      if (imageUrl) {
+        return res.redirect(imageUrl);
+      }
+      return res.status(404).json({ error: "Employee image not found" });
+    }
+
+    const { object: s3Object } = await getS3ObjectByCandidates(resolvedImageS3Key, imageUrl);
+
+    res.setHeader("Content-Type", s3Object.ContentType || "image/jpeg");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    return res.send(s3Object.Body);
+  } catch (error) {
+    console.error("Employee image failed:", error);
+    const { employeeCode } = req.params;
+    try {
+      const fallbackRows = await query(
+        `SELECT image_url
+         FROM employee_photos
+         WHERE LOWER(TRIM(employee_code)) = LOWER(TRIM(?))
+         ORDER BY id DESC
+         LIMIT 1`,
+        [employeeCode]
+      );
+      const fallbackUrl = fallbackRows[0]?.image_url;
+      if (fallbackUrl) {
+        return res.redirect(fallbackUrl);
+      }
+    } catch (fallbackError) {
+      console.error("Employee image fallback failed:", fallbackError);
+    }
+    return res.status(404).json({ error: "Employee image not found" });
+  }
+});
+
+app.get("/api/images/debug/:employeeCode", async (req, res) => {
+  try {
+    const { employeeCode } = req.params;
+    const rows = await query(
+      `SELECT
+        employees.employee_code,
+        employees.employee_name,
+        employees.image_s3_key AS employee_image_s3_key,
+        employees.image_url AS employee_image_url,
+        employee_photos.id AS photo_id,
+        employee_photos.image_s3_key AS photo_image_s3_key,
+        employee_photos.image_url AS photo_image_url,
+        employee_photos.created_at AS photo_created_at
+      FROM employees
+      LEFT JOIN employee_photos
+        ON LOWER(TRIM(employee_photos.employee_code)) = LOWER(TRIM(employees.employee_code))
+      WHERE LOWER(TRIM(employees.employee_code)) = LOWER(TRIM(?))
+      ORDER BY employee_photos.id DESC`,
+      [employeeCode]
+    );
+
+    return res.json({
+      employeeCode,
+      rows: attachSignedImageUrls(rows.map((row) => ({
+        ...row,
+        image_s3_key: row.photo_image_s3_key || row.employee_image_s3_key,
+        image_url: row.photo_image_url || row.employee_image_url
+      })))
+    });
+  } catch (error) {
+    console.error("Image debug failed:", error);
+    return res.status(500).json({ error: "Image debug failed" });
+  }
+});
+
 app.get("/api/activity-logs", authenticateAdmin, async (req, res) => {
   try {
     await ensureActivityLogsReady();
@@ -760,25 +955,36 @@ app.get("/api/employees",  async (req, res) => {
   try {
     const rows = await query(
       `SELECT
-        id,
-        employee_code,
-        employee_name,
-        company,
-        department,
-        division,
-        location,
-        designation,
-        employment_type,
-        gender,
-        date_of_birth,
-        doj,
-        status,
-        biometric_status,
-        image_s3_key,
-        image_url,
-        created_at
+        employees.id,
+        employees.employee_code,
+        employees.employee_name,
+        employees.company,
+        employees.department,
+        employees.division,
+        employees.location,
+        employees.designation,
+        employees.employment_type,
+        employees.gender,
+        employees.date_of_birth,
+        employees.doj,
+        employees.status,
+        employees.biometric_status,
+        COALESCE(latest_photo.image_s3_key, employees.image_s3_key) AS image_s3_key,
+        COALESCE(latest_photo.image_url, employees.image_url) AS image_url,
+        employees.created_at
       FROM employees
-      ORDER BY id DESC`
+      LEFT JOIN (
+        SELECT employee_photos.employee_code, employee_photos.image_s3_key, employee_photos.image_url
+        FROM employee_photos
+        INNER JOIN (
+          SELECT employee_code, MAX(id) AS latest_photo_id
+          FROM employee_photos
+          GROUP BY employee_code
+        ) latest_photos
+          ON latest_photos.latest_photo_id = employee_photos.id
+      ) latest_photo
+        ON LOWER(TRIM(latest_photo.employee_code)) = LOWER(TRIM(employees.employee_code))
+      ORDER BY employees.id DESC`
     );
 
     return res.json(attachSignedImageUrls(rows));

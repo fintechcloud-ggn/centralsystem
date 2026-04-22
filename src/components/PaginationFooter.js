@@ -1,4 +1,4 @@
-const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
+const ROWS_PER_PAGE_OPTIONS = [10, 25, 50, "All"];
 
 function PaginationFooter({
   currentPage,
@@ -8,9 +8,10 @@ function PaginationFooter({
   onRowsPerPageChange,
   rowsPerPageOptions = ROWS_PER_PAGE_OPTIONS
 }) {
-  const totalPages = Math.max(1, Math.ceil(totalItems / rowsPerPage));
-  const resultStart = totalItems === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
-  const resultEnd = Math.min(currentPage * rowsPerPage, totalItems);
+  const isShowingAll = rowsPerPage === "all";
+  const totalPages = isShowingAll ? 1 : Math.max(1, Math.ceil(totalItems / rowsPerPage));
+  const resultStart = totalItems === 0 ? 0 : isShowingAll ? 1 : (currentPage - 1) * rowsPerPage + 1;
+  const resultEnd = isShowingAll ? totalItems : Math.min(currentPage * rowsPerPage, totalItems);
 
   return (
     <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -18,7 +19,10 @@ function PaginationFooter({
         <span>Show rows per page</span>
         <select
           value={rowsPerPage}
-          onChange={(event) => onRowsPerPageChange(Number(event.target.value))}
+          onChange={(event) => {
+            const value = event.target.value;
+            onRowsPerPageChange(value === "All" ? "all" : Number(value));
+          }}
           className="h-10 rounded-md border border-slate-200 bg-white px-4 pr-9 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-[#cdc3ff] focus:ring-2 focus:ring-[#cdc3ff]/40"
         >
           {rowsPerPageOptions.map((option) => (
