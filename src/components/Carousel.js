@@ -59,14 +59,7 @@ function Carousel() {
   };
 
   if (contests.length === 0) {
-    return (
-      <div className="flex h-[100dvh] w-full items-center justify-center bg-[#f6f6f8] p-6 text-center">
-        <div className="rounded-2xl border border-slate-200 bg-white/80 px-6 py-5 text-slate-600 shadow-sm">
-          <p className="text-lg font-semibold text-slate-800">No active contests</p>
-          <p className="mt-1 text-sm">Add a contest from the admin panel to show it here.</p>
-        </div>
-      </div>
-    );
+    return <div className="h-[100dvh] w-full bg-[#f6f6f8]" />;
   }
 
   return (

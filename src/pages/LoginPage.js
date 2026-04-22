@@ -64,7 +64,18 @@ function Login() {
   };
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-gradient-to-br from-[#f3f4f6] to-[#dbe7df] p-4 sm:p-6 2xl:p-10">
+    <div className="relative flex min-h-[100dvh] items-center justify-center bg-gradient-to-br from-[#f3f4f6] to-[#dbe7df] p-4 sm:p-6 2xl:p-10">
+      {isLoggingIn && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-sm">
+          <div className="flex flex-col items-center rounded-2xl border border-white/80 bg-white/90 px-8 py-7 text-center shadow-[0_20px_60px_rgba(31,45,42,0.18)]">
+            <span className="h-12 w-12 animate-spin rounded-full border-4 border-[#cfe3d6] border-t-[#2f5d50]" />
+            <p className="mt-4 text-base font-semibold text-[#1f2d2a]">
+              Signing you in...
+            </p>
+            <p className="mt-1 text-sm text-slate-500">Please wait</p>
+          </div>
+        </div>
+      )}
       <div className="mx-auto flex min-h-[min(620px,calc(100dvh-2rem))] w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_rgba(0,0,0,0.15)] sm:rounded-3xl 2xl:max-w-6xl">
         {/* LEFT SIDE - CAROUSEL */}
         <div className="hidden w-1/2 items-center justify-center overflow-hidden bg-[#cfe3d6] p-8 lg:flex xl:p-14">

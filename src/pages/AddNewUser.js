@@ -146,9 +146,9 @@ function NewUser() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h3 className="text-xl font-bold text-slate-800">Bulk Upload Employees</h3>
-            <p className="mt-1 text-sm text-slate-500">
+            {/* <p className="mt-1 text-sm text-slate-500">
               Upload CSV or Excel with Employee Code, Employee Name, Company, Department, Division, Location, Designation, Employment Type, Gender, Date of Birth, DOJ, Status, Biometric Status, and Image URL.
-            </p>
+            </p> */}
           </div>
           <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
             <input
