@@ -12,7 +12,7 @@ const quickActions = [
   { label: "Delete Contest", to: "/admin/delete-contest", superUserOnly: true },
   { label: "Edit Employee", to: "/admin/edit-existing" },
   { label: "Delete Employee", to: "/admin/delete-existing", superUserOnly: true },
-  { label: "Activity Logs", to: "/admin/activity-logs", superUserOnly: true }
+  { label: "Activity Logs", to: "/admin/activity-logs" }
 ];
 
 function AdminOverview() {

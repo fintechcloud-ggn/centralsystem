@@ -686,7 +686,7 @@ app.get("/api/admin/verify", authenticateAdmin, (req, res) => {
   return res.json({ valid: true, admin: req.admin });
 });
 
-app.get("/api/activity-logs", authenticateAdmin, requireSuperUser, async (req, res) => {
+app.get("/api/activity-logs", authenticateAdmin, async (req, res) => {
   try {
     await ensureActivityLogsReady();
     const rows = await query(

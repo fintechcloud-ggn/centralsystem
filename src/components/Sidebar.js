@@ -137,8 +137,7 @@ const linkClassName = ({ isActive }) =>
     {
       label: "Activity Logs",
       to: "/admin/activity-logs",
-      iconType: "logs",
-      superUserOnly: true
+      iconType: "logs"
     }
   ].filter((item) => !item.superUserOnly || canDelete);
 
