@@ -98,6 +98,8 @@ const ADMIN_ROLES = {
   SUPER_USER: "super_user",
   ADMIN: "admin"
 };
+const ACTIVITY_LOG_RETENTION_DAYS = 7;
+const ACTIVITY_LOG_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 const normalizeAdminRole = (role) =>
   role === ADMIN_ROLES.SUPER_USER ? ADMIN_ROLES.SUPER_USER : ADMIN_ROLES.ADMIN;
@@ -556,6 +558,8 @@ const initializeActivityLogsTable = async () => {
 };
 
 let activityLogsInitPromise;
+let activityLogCleanupPromise;
+let activityLogCleanupTimer;
 
 const ensureActivityLogsReady = () => {
   if (!activityLogsInitPromise) {
@@ -565,9 +569,45 @@ const ensureActivityLogsReady = () => {
   return activityLogsInitPromise;
 };
 
+const cleanupOldActivityLogs = async () => {
+  if (activityLogCleanupPromise) {
+    return activityLogCleanupPromise;
+  }
+
+  activityLogCleanupPromise = (async () => {
+    await ensureActivityLogsReady();
+    const result = await query(
+      `DELETE FROM activity_logs
+       WHERE created_at < (NOW() - INTERVAL ${ACTIVITY_LOG_RETENTION_DAYS} DAY)`
+    );
+
+    if (result.affectedRows > 0) {
+      console.log(`Deleted ${result.affectedRows} activity logs older than ${ACTIVITY_LOG_RETENTION_DAYS} days.`);
+    }
+  })()
+    .catch((error) => {
+      console.warn("Activity log cleanup failed:", error.message);
+    })
+    .finally(() => {
+      activityLogCleanupPromise = null;
+    });
+
+  return activityLogCleanupPromise;
+};
+
+const startActivityLogCleanupSchedule = () => {
+  if (activityLogCleanupTimer) return;
+
+  cleanupOldActivityLogs();
+  activityLogCleanupTimer = setInterval(cleanupOldActivityLogs, ACTIVITY_LOG_CLEANUP_INTERVAL_MS);
+  if (typeof activityLogCleanupTimer.unref === "function") {
+    activityLogCleanupTimer.unref();
+  }
+};
+
 const insertActivityLog = async (admin, activity) => {
   try {
-    await ensureActivityLogsReady();
+    await cleanupOldActivityLogs();
     await query(
       `INSERT INTO activity_logs
        (admin_id, admin_email, admin_role, action, entity_type, entity_id, details)
@@ -927,7 +967,7 @@ app.get("/api/images/debug/:employeeCode", async (req, res) => {
 
 app.get("/api/activity-logs", authenticateAdmin, async (req, res) => {
   try {
-    await ensureActivityLogsReady();
+    await cleanupOldActivityLogs();
     const rows = await query(
       `SELECT
         id,
@@ -1645,6 +1685,7 @@ const initializeApp = ({ runMigrations = false } = {}) => {
 if (require.main === module) {
   initializeApp({ runMigrations: true })
     .then(() => {
+      startActivityLogCleanupSchedule();
       app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
       });
