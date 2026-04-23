@@ -21,15 +21,19 @@ function PaginationFooter({
           value={rowsPerPage}
           onChange={(event) => {
             const value = event.target.value;
-            onRowsPerPageChange(value === "All" ? "all" : Number(value));
+            onRowsPerPageChange(value === "all" ? "all" : Number(value));
           }}
           className="h-10 rounded-md border border-slate-200 bg-white px-4 pr-9 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-[#cdc3ff] focus:ring-2 focus:ring-[#cdc3ff]/40"
         >
-          {rowsPerPageOptions.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
+          {rowsPerPageOptions.map((option) => {
+            const optionValue = option === "All" ? "all" : option;
+
+            return (
+              <option key={option} value={optionValue}>
+                {option}
+              </option>
+            );
+          })}
         </select>
       </label>
 
