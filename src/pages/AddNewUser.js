@@ -16,6 +16,37 @@ const createBulkSummary = (total) => ({
   warnings: []
 });
 
+const getErrorMessage = (error, fallback) => {
+  const responseData = error?.response?.data;
+  const responseError = responseData?.error ?? responseData?.message ?? responseData;
+
+  if (!responseError) {
+    return error?.message || fallback;
+  }
+
+  if (typeof responseError === "string") {
+    return responseError;
+  }
+
+  if (Array.isArray(responseError)) {
+    const firstMessage = responseError.find((item) => typeof item === "string");
+    return firstMessage || fallback;
+  }
+
+  if (typeof responseError === "object") {
+    if (typeof responseError.message === "string") {
+      return responseError.message;
+    }
+
+    const firstStringValue = Object.values(responseError).find((value) => typeof value === "string");
+    if (firstStringValue) {
+      return firstStringValue;
+    }
+  }
+
+  return fallback;
+};
+
 function NewUser() {
   const initialFormData = {
     employeeCode: "",
@@ -88,7 +119,7 @@ function NewUser() {
       setFormData(initialFormData);
     } catch (error) {
       console.error(error);
-      alert(error?.response?.data?.error || "Error creating employee");
+      toast.error(getErrorMessage(error, "Error creating employee"));
     } finally {
       setIsSubmitting(false);
     }
@@ -159,9 +190,7 @@ function NewUser() {
       setBulkFile(null);
     } catch (error) {
       console.error(error);
-      const message =
-        error?.response?.data?.error || error?.message || "Bulk upload failed";
-      toast.error(message);
+      toast.error(getErrorMessage(error, "Bulk upload failed"));
     } finally {
       setIsBulkUploading(false);
     }
