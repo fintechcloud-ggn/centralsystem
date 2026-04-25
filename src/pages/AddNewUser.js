@@ -4,6 +4,12 @@ import * as XLSX from "xlsx";
 import { getAdminToken } from "../components/adminAuth";
 import toast from "react-hot-toast";
 import { apiUrl } from "../lib/api";
+import {
+  formatFileSize,
+  getUploadErrorMessage,
+  MAX_IMAGE_UPLOAD_BYTES,
+  prepareImageForUpload
+} from "../lib/imageUpload";
 
 const BULK_UPLOAD_BATCH_SIZE = 10;
 
@@ -15,37 +21,6 @@ const createBulkSummary = (total) => ({
   errors: [],
   warnings: []
 });
-
-const getErrorMessage = (error, fallback) => {
-  const responseData = error?.response?.data;
-  const responseError = responseData?.error ?? responseData?.message ?? responseData;
-
-  if (!responseError) {
-    return error?.message || fallback;
-  }
-
-  if (typeof responseError === "string") {
-    return responseError;
-  }
-
-  if (Array.isArray(responseError)) {
-    const firstMessage = responseError.find((item) => typeof item === "string");
-    return firstMessage || fallback;
-  }
-
-  if (typeof responseError === "object") {
-    if (typeof responseError.message === "string") {
-      return responseError.message;
-    }
-
-    const firstStringValue = Object.values(responseError).find((value) => typeof value === "string");
-    if (firstStringValue) {
-      return firstStringValue;
-    }
-  }
-
-  return fallback;
-};
 
 function NewUser() {
   const initialFormData = {
@@ -67,15 +42,41 @@ function NewUser() {
 
   const [formData, setFormData] = useState(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPreparingImage, setIsPreparingImage] = useState(false);
   const [bulkFile, setBulkFile] = useState(null);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
   const [bulkResult, setBulkResult] = useState(null);
 
-  const handleChange = (event) => {
+  const handleChange = async (event) => {
     const { name, value, files } = event.target;
 
     if (name === "image") {
-      setFormData((prev) => ({ ...prev, image: files?.[0] || null }));
+      const selectedFile = files?.[0] || null;
+
+      if (!selectedFile) {
+        setFormData((prev) => ({ ...prev, image: null }));
+        return;
+      }
+
+      try {
+        setIsPreparingImage(true);
+        const preparedImage = await prepareImageForUpload(selectedFile);
+        setFormData((prev) => ({ ...prev, image: preparedImage }));
+
+        if (preparedImage !== selectedFile) {
+          toast.success(
+            `Image optimized from ${formatFileSize(selectedFile.size)} to ${formatFileSize(preparedImage.size)}`
+          );
+        }
+      } catch (error) {
+        console.error(error);
+        setFormData((prev) => ({ ...prev, image: null }));
+        event.target.value = "";
+        toast.error(error.message || "Unable to process the selected image");
+      } finally {
+        setIsPreparingImage(false);
+      }
+
       return;
     }
 
@@ -84,6 +85,12 @@ function NewUser() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (isPreparingImage) {
+      toast.error("Please wait for the image to finish processing");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const token = getAdminToken();
@@ -119,7 +126,7 @@ function NewUser() {
       setFormData(initialFormData);
     } catch (error) {
       console.error(error);
-      toast.error(getErrorMessage(error, "Error creating employee"));
+      toast.error(getUploadErrorMessage(error, "Error creating employee"));
     } finally {
       setIsSubmitting(false);
     }
@@ -190,7 +197,7 @@ function NewUser() {
       setBulkFile(null);
     } catch (error) {
       console.error(error);
-      toast.error(getErrorMessage(error, "Bulk upload failed"));
+      toast.error(getUploadErrorMessage(error, "Bulk upload failed"));
     } finally {
       setIsBulkUploading(false);
     }
@@ -202,6 +209,7 @@ function NewUser() {
         <h2 className="text-2xl font-bold text-slate-800">Add New Employee</h2>
         <p className="mt-1 text-sm text-slate-500">
           Fill all table fields and upload the employee image. Date of birth must be in ddmmyy format.
+          Large photos are automatically compressed before upload.
         </p>
       </div>
 
@@ -454,6 +462,12 @@ function NewUser() {
               onChange={handleChange}
               className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
             />
+            <p className="mt-1 text-xs text-slate-500">
+              Images above {formatFileSize(MAX_IMAGE_UPLOAD_BYTES)} may be compressed automatically.
+            </p>
+            {isPreparingImage && (
+              <p className="mt-1 text-xs text-slate-500">Optimizing image for upload...</p>
+            )}
           </div>
 
           <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-between">
@@ -467,10 +481,10 @@ function NewUser() {
 
             <button
               type="submit"
+              disabled={isSubmitting || isPreparingImage}
               className="rounded-full bg-gradient-to-r from-[#ff9f6f] to-[#f17dac] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isSubmitting}
             >
-              {isSubmitting ? "Creating..." : "Create Employee"}
+              {isPreparingImage ? "Preparing image..." : isSubmitting ? "Creating..." : "Create Employee"}
             </button>
           </div>
         </form>

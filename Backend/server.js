@@ -1072,6 +1072,20 @@ app.post("/api/employees", authenticateAdmin, upload.single("image"), async (req
       });
     }
 
+    const existingEmployee = await query(
+      `SELECT employee_code
+       FROM employees
+       WHERE LOWER(TRIM(employee_code)) = LOWER(TRIM(?))
+       LIMIT 1`,
+      [resolvedEmployeeCode]
+    );
+
+    if (existingEmployee.length > 0) {
+      return res.status(409).json({
+        error: `Employee with code ${resolvedEmployeeCode} already exists`
+      });
+    }
+
     const file = req.file;
     if (!file) {
       return res.status(400).json({ error: "Image is required" });
@@ -1085,19 +1099,14 @@ app.post("/api/employees", authenticateAdmin, upload.single("image"), async (req
       ContentType: file.mimetype
     }).promise();
 
-    // Save to MySQL
-    const sql = `
-      INSERT INTO employees 
+    await query(
+      `INSERT INTO employees 
       (
         employee_code, employee_name, company, department, division,
         location, designation, employment_type, gender, date_of_birth, doj, status, biometric_status,
         image_s3_key, image_url
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    db.query(
-      sql,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         resolvedEmployeeCode,
         resolvedEmployeeName,
@@ -1114,28 +1123,28 @@ app.post("/api/employees", authenticateAdmin, upload.single("image"), async (req
         biometricStatus || "Active",
         s3Key,
         uploadResult.Location
-      ],
-      (err, result) => {
-        if (err) return res.status(500).json(err);
-        db.query(
-          "INSERT INTO employee_photos (employee_code, image_s3_key, image_url) VALUES (?, ?, ?)",
-          [resolvedEmployeeCode, s3Key, uploadResult.Location],
-          (photoErr) => {
-            if (photoErr) return res.status(500).json(photoErr);
-            logActivity(req, {
-              action: "create_employee",
-              entityType: "employee",
-              entityId: resolvedEmployeeCode,
-              details: { employeeName: resolvedEmployeeName }
-            });
-            return res.json({ message: "Employee Created Successfully" });
-          }
-        );
-      }
+      ]
     );
+
+    await query(
+      "INSERT INTO employee_photos (employee_code, image_s3_key, image_url) VALUES (?, ?, ?)",
+      [resolvedEmployeeCode, s3Key, uploadResult.Location]
+    );
+
+    logActivity(req, {
+      action: "create_employee",
+      entityType: "employee",
+      entityId: resolvedEmployeeCode,
+      details: { employeeName: resolvedEmployeeName }
+    });
+
+    return res.json({ message: "Employee Created Successfully" });
 
   } catch (error) {
     console.error(error);
+    if (error?.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({ error: "Employee already exists" });
+    }
     res.status(500).json({ error: "Server Error" });
   }
 });

@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import toast from "react-hot-toast";
 import { getAdminToken } from "../components/adminAuth";
 import { apiUrl } from "../lib/api";
+import {
+  formatFileSize,
+  getUploadErrorMessage,
+  MAX_IMAGE_UPLOAD_BYTES,
+  prepareImageForUpload
+} from "../lib/imageUpload";
 import PaginationFooter from "../components/PaginationFooter";
 
 const initialEditPayload = {
@@ -20,13 +27,6 @@ const initialEditPayload = {
   selectedImageS3Key: ""
 };
 
-const getErrorMessage = (error, fallback) => {
-  const responseError = error?.response?.data?.error || error?.response?.data;
-  if (!responseError) return fallback;
-  if (typeof responseError === "string") return responseError;
-  return responseError.message || JSON.stringify(responseError);
-};
-
 function EditExisting() {
   const [records, setRecords] = useState([]);
   const [query, setQuery] = useState("");
@@ -36,6 +36,7 @@ function EditExisting() {
   const [photoOptions, setPhotoOptions] = useState([]);
   const [photoFile, setPhotoFile] = useState(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isPreparingPhoto, setIsPreparingPhoto] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -114,6 +115,12 @@ function EditExisting() {
 
   const uploadNewPhoto = async () => {
     if (!photoFile || !editingCode) return;
+
+    if (isPreparingPhoto) {
+      toast.error("Please wait for the image to finish processing");
+      return;
+    }
+
     try {
       setIsUploadingPhoto(true);
       const token = getAdminToken();
@@ -131,9 +138,10 @@ function EditExisting() {
         selectedImageS3Key: response?.data?.photo?.image_s3_key || prev.selectedImageS3Key
       }));
       setPhotoFile(null);
+      toast.success("Photo uploaded successfully");
     } catch (error) {
       console.error(error);
-      alert(getErrorMessage(error, "Photo upload failed"));
+      toast.error(getUploadErrorMessage(error, "Photo upload failed"));
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -150,7 +158,7 @@ function EditExisting() {
       closeModal();
     } catch (error) {
       console.error(error);
-      alert(getErrorMessage(error, "Update failed"));
+      toast.error(getUploadErrorMessage(error, "Update failed"));
     } finally {
       setIsSaving(false);
     }
@@ -322,18 +330,47 @@ function EditExisting() {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+                    onChange={async (e) => {
+                      const selectedFile = e.target.files?.[0] || null;
+
+                      if (!selectedFile) {
+                        setPhotoFile(null);
+                        return;
+                      }
+
+                      try {
+                        setIsPreparingPhoto(true);
+                        const preparedImage = await prepareImageForUpload(selectedFile);
+                        setPhotoFile(preparedImage);
+
+                        if (preparedImage !== selectedFile) {
+                          toast.success(
+                            `Image optimized from ${formatFileSize(selectedFile.size)} to ${formatFileSize(preparedImage.size)}`
+                          );
+                        }
+                      } catch (error) {
+                        console.error(error);
+                        setPhotoFile(null);
+                        e.target.value = "";
+                        toast.error(error.message || "Unable to process the selected image");
+                      } finally {
+                        setIsPreparingPhoto(false);
+                      }
+                    }}
                     className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5"
                   />
                   <button
                     type="button"
                     onClick={uploadNewPhoto}
-                    disabled={!photoFile || isUploadingPhoto}
+                    disabled={!photoFile || isUploadingPhoto || isPreparingPhoto}
                     className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-[#f8f7fc] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {isUploadingPhoto ? "Uploading..." : "Upload Photo"}
+                    {isPreparingPhoto ? "Preparing..." : isUploadingPhoto ? "Uploading..." : "Upload Photo"}
                   </button>
                 </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  Images above {formatFileSize(MAX_IMAGE_UPLOAD_BYTES)} may be compressed automatically.
+                </p>
               </div>
             </div>
 
