@@ -44,13 +44,9 @@ async function findFreePort(startPort) {
 
 async function main() {
   const port = await findFreePort(preferredPort);
-  const reactScriptsBin = path.join(
-    __dirname,
-    "..",
-    "node_modules",
-    ".bin",
-    process.platform === "win32" ? "react-scripts.cmd" : "react-scripts"
-  );
+  const reactScriptsEntry = require.resolve("react-scripts/scripts/start", {
+    paths: [path.join(__dirname, "..")],
+  });
 
   if (port !== preferredPort) {
     console.log(
@@ -58,7 +54,7 @@ async function main() {
     );
   }
 
-  const child = spawn(reactScriptsBin, ["start"], {
+  const child = spawn(process.execPath, [reactScriptsEntry], {
     env: {
       ...process.env,
       PORT: String(port),

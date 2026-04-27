@@ -53,6 +53,18 @@ function MenuGlyph({ type }) {
     );
   }
 
+  if (type === "quote") {
+    return (
+      <MenuIcon>
+        <path d="M8 8h8" />
+        <path d="M8 12h8" />
+        <path d="M8 16h5" />
+        <path d="M5 6l2-2M19 6l-2-2" />
+        <path d="M5 18l2 2M19 18l-2 2" />
+      </MenuIcon>
+    );
+  }
+
   if (type === "edit") {
     return (
       <MenuIcon>
@@ -179,7 +191,20 @@ const linkClassName = ({ isActive }) =>
     }
   ].filter((item) => !item.superUserOnly || canDelete);
 
-  const collapsedItems = [...commonItems, ...employeeItems, ...contestItems, ...activityItems];
+  const quoteItems = [
+    {
+      label: "Add Quote",
+      to: "/admin/add-quote",
+      iconType: "quote"
+    },
+    {
+      label: "Edit Quote",
+      to: "/admin/edit-quote",
+      iconType: "edit"
+    }
+  ];
+
+  const collapsedItems = [...commonItems, ...employeeItems, ...contestItems, ...quoteItems, ...activityItems];
 
   const renderItem = (item) => (
     <li key={item.label}>
@@ -251,9 +276,17 @@ const linkClassName = ({ isActive }) =>
           <p className="mb-0.5 mt-3 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9d98bb]">
             Contest Menu
           </p>
-          <ul className="w-full space-y-0.5">
-            {[...contestItems, ...activityItems].map(renderItem)}
-          </ul>
+          <ul className="w-full space-y-0.5">{contestItems.map(renderItem)}</ul>
+
+          <p className="mb-0.5 mt-3 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9d98bb]">
+            Quote Menu
+          </p>
+          <ul className="w-full space-y-0.5">{quoteItems.map(renderItem)}</ul>
+
+          <p className="mb-0.5 mt-3 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9d98bb]">
+            Activity
+          </p>
+          <ul className="w-full space-y-0.5">{activityItems.map(renderItem)}</ul>
         </>
       )}
 

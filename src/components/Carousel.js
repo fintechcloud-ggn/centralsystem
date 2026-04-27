@@ -3,9 +3,10 @@ import Contest1 from "./Contest1";
 import Contest2 from "./Contest2";
 import Contest3 from "./Contest3";
 import Contest4 from "./Contest4";
+import QuoteCarousel from "./QuoteCarousel";
 import { apiUrl } from "../lib/api";
 
-function Carousel() {
+function Carousel({ showFallback = false }) {
   const [contests, setContests] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -59,6 +60,10 @@ function Carousel() {
   };
 
   if (contests.length === 0) {
+    if (showFallback) {
+      return <QuoteCarousel />;
+    }
+
     return <div className="h-[100dvh] w-full bg-[#f6f6f8]" />;
   }
 

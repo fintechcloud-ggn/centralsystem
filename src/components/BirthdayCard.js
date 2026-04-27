@@ -396,7 +396,11 @@ function CelebrationCards({ mode = "auto" }) {
   }
 
   if (phase === "carousel" || activeUsers.length === 0) {
-    return <Carousel />;
+    return (
+      <Carousel
+        showFallback={birthdayUsers.length === 0 && anniversaryUsers.length === 0}
+      />
+    );
   }
 
   return (

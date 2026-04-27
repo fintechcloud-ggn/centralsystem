@@ -9,6 +9,8 @@ import AdminOverview from './pages/AdminOverview';
 import AddNewContest from './pages/AddNewContest';
 import EditContest from './pages/EditContest';
 import DeleteContest from './pages/DeleteContest';
+import AddQuote from './pages/AddQuote';
+import EditQuote from './pages/EditQuote';
 import EditExisting from './pages/EditExisting';
 import DeleteExisting from './pages/DeleteExisting';
 import ActivityLogs from './pages/ActivityLogs';
@@ -36,6 +38,8 @@ function App() {
     <Route path="add-contest" element={<AddNewContest/>}/>
     <Route path="edit-contest" element={<EditContest/>}/>
     <Route path="delete-contest" element={<DeleteContest/>}/>
+    <Route path="add-quote" element={<AddQuote/>}/>
+    <Route path="edit-quote" element={<EditQuote/>}/>
     <Route path="edit-existing" element={<EditExisting/>}/>
     <Route path="delete-existing" element={<DeleteExisting/>}/>
     <Route path="activity-logs" element={<ActivityLogs/>}/>

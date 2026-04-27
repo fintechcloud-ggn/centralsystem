@@ -240,6 +240,34 @@ const getS3ObjectByCandidates = async (imageS3Key, imageUrl) => {
   throw lastError || new Error("No S3 key candidates found");
 };
 
+const uploadImageToS3 = async (folderKey, file) => {
+  const s3Key = `${folderKey}/${Date.now()}_${sanitizeFileName(file.originalname)}`;
+  const uploadResult = await s3.upload({
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: s3Key,
+    Body: file.buffer,
+    ContentType: file.mimetype
+  }).promise();
+
+  return {
+    s3Key,
+    location: uploadResult.Location
+  };
+};
+
+const ALLOWED_QUOTE_DURATIONS = new Set([24, 48, 72]);
+
+const normalizeQuoteDuration = (value) => {
+  const normalizedValue = Number(value);
+  return ALLOWED_QUOTE_DURATIONS.has(normalizedValue) ? normalizedValue : null;
+};
+
+const getQuoteExpiryDate = (durationHours, baseDate = new Date()) => {
+  const expiresAt = new Date(baseDate);
+  expiresAt.setHours(expiresAt.getHours() + durationHours);
+  return expiresAt;
+};
+
 const getSignedImageUrl = (imageS3Key, fallbackUrl = null) => {
   const normalizedKey = normalizeS3Key(imageS3Key);
   if (!normalizedKey) {
@@ -1447,6 +1475,25 @@ const initializeContestsTable = async () => {
   await query(createTableQuery);
 };
 
+const initializeQuotesTable = async () => {
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS quotes (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      quote_text TEXT NOT NULL,
+      duration_hours INT NOT NULL,
+      published_at DATETIME NOT NULL,
+      expires_at DATETIME NOT NULL,
+      image_s3_key VARCHAR(1024) NULL,
+      image_url TEXT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_quotes_expires_at (expires_at)
+    )
+  `;
+
+  await query(createTableQuery);
+};
+
 //Contest api
 app.post("/api/contests", authenticateAdmin, async (req, res) => {
   try {
@@ -1666,6 +1713,150 @@ app.delete("/api/contests/:id", authenticateAdmin, requireSuperUser, async (req,
   }
 });
 
+app.post("/api/quotes", authenticateAdmin, upload.single("image"), async (req, res) => {
+  try {
+    const quoteText = String(req.body?.quoteText || "").trim();
+    const durationHours = normalizeQuoteDuration(req.body?.durationHours);
+    const file = req.file;
+
+    if (!quoteText) {
+      return res.status(400).json({ error: "Quote text is required" });
+    }
+
+    if (!durationHours) {
+      return res.status(400).json({ error: "Duration must be 24, 48, or 72 hours" });
+    }
+
+    if (!file) {
+      return res.status(400).json({ error: "Image is required" });
+    }
+
+    const uploadedImage = await uploadImageToS3("quotes", file);
+    const publishedAt = new Date();
+    const expiresAt = getQuoteExpiryDate(durationHours, publishedAt);
+
+    const result = await query(
+      `INSERT INTO quotes
+       (quote_text, duration_hours, published_at, expires_at, image_s3_key, image_url)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        quoteText,
+        durationHours,
+        publishedAt,
+        expiresAt,
+        uploadedImage.s3Key,
+        uploadedImage.location
+      ]
+    );
+
+    await logActivity(req, {
+      action: "create_quote",
+      entityType: "quote",
+      entityId: result.insertId,
+      details: { durationHours }
+    });
+
+    return res.status(201).json({
+      message: "Quote created successfully",
+      quoteId: result.insertId
+    });
+  } catch (error) {
+    console.error("Quote Create Error:", error);
+    return res.status(500).json({ error: "Quote creation failed" });
+  }
+});
+
+app.get("/api/quotes", async (req, res) => {
+  try {
+    const includeAll = req.query?.all === "1";
+    const rows = await query(
+      `SELECT
+         id,
+         quote_text,
+         duration_hours,
+         published_at,
+         expires_at,
+         image_s3_key,
+         image_url,
+         created_at,
+         updated_at
+       FROM quotes
+       ${includeAll ? "" : "WHERE expires_at >= NOW()"}
+       ORDER BY published_at DESC, created_at DESC`
+    );
+
+    return res.json(
+      attachSignedImageUrls(rows).map((row) => ({
+        ...row,
+        is_active: new Date(row.expires_at) >= new Date()
+      }))
+    );
+  } catch (error) {
+    console.error("Quote Fetch Error:", error);
+    return res.status(500).json({ error: "Quote fetch failed" });
+  }
+});
+
+app.put("/api/quotes/:id", authenticateAdmin, upload.single("image"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const quoteText = String(req.body?.quoteText || "").trim();
+    const durationHours = normalizeQuoteDuration(req.body?.durationHours);
+
+    if (!quoteText) {
+      return res.status(400).json({ error: "Quote text is required" });
+    }
+
+    if (!durationHours) {
+      return res.status(400).json({ error: "Duration must be 24, 48, or 72 hours" });
+    }
+
+    const existingRows = await query(
+      `SELECT id, image_s3_key, image_url FROM quotes WHERE id = ? LIMIT 1`,
+      [id]
+    );
+
+    if (existingRows.length === 0) {
+      return res.status(404).json({ error: "Quote not found" });
+    }
+
+    const publishedAt = new Date();
+    const expiresAt = getQuoteExpiryDate(durationHours, publishedAt);
+    let imageS3Key = existingRows[0].image_s3_key;
+    let imageUrl = existingRows[0].image_url;
+
+    if (req.file) {
+      const uploadedImage = await uploadImageToS3("quotes", req.file);
+      imageS3Key = uploadedImage.s3Key;
+      imageUrl = uploadedImage.location;
+    }
+
+    await query(
+      `UPDATE quotes
+       SET quote_text = ?,
+           duration_hours = ?,
+           published_at = ?,
+           expires_at = ?,
+           image_s3_key = ?,
+           image_url = ?
+       WHERE id = ?`,
+      [quoteText, durationHours, publishedAt, expiresAt, imageS3Key, imageUrl, id]
+    );
+
+    await logActivity(req, {
+      action: "update_quote",
+      entityType: "quote",
+      entityId: id,
+      details: { durationHours }
+    });
+
+    return res.json({ message: "Quote updated successfully" });
+  } catch (error) {
+    console.error("Quote Update Error:", error);
+    return res.status(500).json({ error: "Quote update failed" });
+  }
+});
+
 
 let startupPromise;
 
@@ -1684,7 +1875,8 @@ const initializeApp = ({ runMigrations = false } = {}) => {
       .then(() => initializeAdminTable())
       .then(() => initializeActivityLogsTable())
       .then(() => initializeEmployeesTable())
-      .then(() => initializeContestsTable());
+      .then(() => initializeContestsTable())
+      .then(() => initializeQuotesTable());
       // .then(() => seedEmployeesTable())
   }
 
