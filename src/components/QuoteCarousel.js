@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import NoEventsPage from "./NoEventsPage";
+import QuoteTemplateRenderer from "./QuoteTemplates";
 import { apiUrl } from "../lib/api";
 
 const QUOTE_SLIDE_DURATION_MS = 30000;
@@ -60,7 +61,8 @@ function QuoteCarousel() {
             key={quote.id}
             className="h-[100dvh] w-full flex-shrink-0 overflow-hidden"
           >
-            <NoEventsPage
+            <QuoteTemplateRenderer
+              templateKey={quote.template_key || "template1"}
               quoteText={quote.quote_text}
               imageSrc={quote.image_url}
               autoRotate={false}

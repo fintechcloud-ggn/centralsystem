@@ -1480,6 +1480,7 @@ const initializeQuotesTable = async () => {
     CREATE TABLE IF NOT EXISTS quotes (
       id INT AUTO_INCREMENT PRIMARY KEY,
       quote_text TEXT NOT NULL,
+      template_key VARCHAR(50) NOT NULL DEFAULT 'template1',
       duration_hours INT NOT NULL,
       published_at DATETIME NOT NULL,
       expires_at DATETIME NOT NULL,
@@ -1492,6 +1493,10 @@ const initializeQuotesTable = async () => {
   `;
 
   await query(createTableQuery);
+  const templateColumn = await query("SHOW COLUMNS FROM quotes LIKE 'template_key'");
+  if (templateColumn.length === 0) {
+    await query("ALTER TABLE quotes ADD COLUMN template_key VARCHAR(50) NOT NULL DEFAULT 'template1' AFTER quote_text");
+  }
 };
 
 //Contest api
@@ -1716,6 +1721,7 @@ app.delete("/api/contests/:id", authenticateAdmin, requireSuperUser, async (req,
 app.post("/api/quotes", authenticateAdmin, upload.single("image"), async (req, res) => {
   try {
     const quoteText = String(req.body?.quoteText || "").trim();
+    const templateKey = String(req.body?.templateKey || "template1").trim() || "template1";
     const durationHours = normalizeQuoteDuration(req.body?.durationHours);
     const file = req.file;
 
@@ -1737,10 +1743,11 @@ app.post("/api/quotes", authenticateAdmin, upload.single("image"), async (req, r
 
     const result = await query(
       `INSERT INTO quotes
-       (quote_text, duration_hours, published_at, expires_at, image_s3_key, image_url)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+       (quote_text, template_key, duration_hours, published_at, expires_at, image_s3_key, image_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         quoteText,
+        templateKey,
         durationHours,
         publishedAt,
         expiresAt,
@@ -1773,6 +1780,7 @@ app.get("/api/quotes", async (req, res) => {
       `SELECT
          id,
          quote_text,
+         template_key,
          duration_hours,
          published_at,
          expires_at,
@@ -1801,6 +1809,7 @@ app.put("/api/quotes/:id", authenticateAdmin, upload.single("image"), async (req
   try {
     const { id } = req.params;
     const quoteText = String(req.body?.quoteText || "").trim();
+    const templateKey = String(req.body?.templateKey || "template1").trim() || "template1";
     const durationHours = normalizeQuoteDuration(req.body?.durationHours);
 
     if (!quoteText) {
@@ -1834,13 +1843,14 @@ app.put("/api/quotes/:id", authenticateAdmin, upload.single("image"), async (req
     await query(
       `UPDATE quotes
        SET quote_text = ?,
+           template_key = ?,
            duration_hours = ?,
            published_at = ?,
            expires_at = ?,
            image_s3_key = ?,
            image_url = ?
        WHERE id = ?`,
-      [quoteText, durationHours, publishedAt, expiresAt, imageS3Key, imageUrl, id]
+      [quoteText, templateKey, durationHours, publishedAt, expiresAt, imageS3Key, imageUrl, id]
     );
 
     await logActivity(req, {
@@ -1854,6 +1864,28 @@ app.put("/api/quotes/:id", authenticateAdmin, upload.single("image"), async (req
   } catch (error) {
     console.error("Quote Update Error:", error);
     return res.status(500).json({ error: "Quote update failed" });
+  }
+});
+
+app.delete("/api/quotes/:id", authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await query("DELETE FROM quotes WHERE id = ?", [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Quote not found" });
+    }
+
+    await logActivity(req, {
+      action: "delete_quote",
+      entityType: "quote",
+      entityId: id
+    });
+
+    return res.json({ message: "Quote deleted successfully" });
+  } catch (error) {
+    console.error("Quote Delete Error:", error);
+    return res.status(500).json({ error: "Quote delete failed" });
   }
 });
 

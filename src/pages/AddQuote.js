@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import NoEventsPage from "../components/NoEventsPage";
+import QuoteTemplateRenderer, { QUOTE_TEMPLATE_OPTIONS } from "../components/QuoteTemplates";
 import { getAdminToken } from "../components/adminAuth";
 import { apiUrl } from "../lib/api";
 
 const initialFormData = {
   quoteText: "",
   durationHours: "24",
+  templateKey: "template1",
   image: null
 };
 
@@ -53,6 +54,7 @@ function AddQuote() {
       const payload = new FormData();
       payload.append("quoteText", formData.quoteText.trim());
       payload.append("durationHours", formData.durationHours);
+      payload.append("templateKey", formData.templateKey);
       payload.append("image", formData.image);
 
       const response = await fetch(apiUrl("/api/quotes"), {
@@ -80,12 +82,12 @@ function AddQuote() {
   };
 
   return (
-    <section className="mx-auto w-full max-w-5xl 2xl:max-w-7xl">
-      <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
+    <section className="mx-auto w-full max-w-6xl 2xl:max-w-7xl">
+      <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="rounded-[28px] border border-white/80 bg-white/70 p-5 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm md:p-7">
           <h2 className="text-2xl font-bold text-slate-900">Add Quote</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Upload an image, write a thoughtful quote, and set how long it should stay live.
+            Upload an image, write a thoughtful quote, choose a template, and set how long it should stay live.
           </p>
 
           <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -104,6 +106,22 @@ function AddQuote() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
+                <label className="mb-1 block text-sm text-slate-600">Quote Template</label>
+                <select
+                  name="templateKey"
+                  value={formData.templateKey}
+                  onChange={handleChange}
+                  className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
+                >
+                  {QUOTE_TEMPLATE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="mb-1 block text-sm text-slate-600">Display Duration</label>
                 <select
                   name="durationHours"
@@ -116,18 +134,18 @@ function AddQuote() {
                   <option value="72">72 Hours</option>
                 </select>
               </div>
+            </div>
 
-              <div>
-                <label className="mb-1 block text-sm text-slate-600">Quote Image</label>
-                <input
-                  type="file"
-                  name="image"
-                  accept="image/*"
-                  required
-                  onChange={handleChange}
-                  className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
-                />
-              </div>
+            <div>
+              <label className="mb-1 block text-sm text-slate-600">Quote Image</label>
+              <input
+                type="file"
+                name="image"
+                accept="image/*"
+                required
+                onChange={handleChange}
+                className="w-full rounded-full border border-[#ece9f8] bg-white/90 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#cdc3ff]"
+              />
             </div>
 
             <button
@@ -141,12 +159,18 @@ function AddQuote() {
         </div>
 
         <aside className="rounded-[28px] border border-white/80 bg-white/70 p-5 shadow-[0_16px_45px_rgba(148,163,184,0.12)] backdrop-blur-sm md:p-6">
-          <h3 className="text-lg font-semibold text-slate-900">Preview</h3>
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-lg font-semibold text-slate-900">Preview</h3>
+            <span className="rounded-full bg-[#f8f7fc] px-3 py-1 text-xs font-medium text-slate-500">
+              {QUOTE_TEMPLATE_OPTIONS.find((item) => item.value === formData.templateKey)?.label}
+            </span>
+          </div>
 
-          <div className="mt-4 flex aspect-[10/7] w-full max-w-[420px] items-center justify-center overflow-hidden rounded-[24px] bg-[#f8f7fc]">
-            <div className="scale-[0.22] origin-center sm:scale-[0.3] xl:scale-[0.28] 2xl:scale-[0.38]">
+          <div className="mt-4 flex aspect-[10/7] w-full max-w-[460px] items-center justify-center overflow-hidden rounded-[24px] bg-[#f8f7fc]">
+            <div className="scale-[0.2] origin-center sm:scale-[0.24] xl:scale-[0.23] 2xl:scale-[0.3]">
               <div className="h-[700px] w-[1000px]">
-                <NoEventsPage
+                <QuoteTemplateRenderer
+                  templateKey={formData.templateKey}
                   quoteText={formData.quoteText || "Your quote preview will appear here."}
                   imageSrc={previewUrl}
                   autoRotate={false}
