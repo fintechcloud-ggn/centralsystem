@@ -67,7 +67,6 @@ const db = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 20,
-  acquireTimeout: 10000,
   connectTimeout: 10000
 });
 
@@ -92,6 +91,11 @@ const query = (sql, values = []) =>
       if (err) return reject(err);
       resolve(rows);
     });
+  });
+
+const delay = (ms) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
   });
 
 const ADMIN_ROLES = {
@@ -1450,6 +1454,30 @@ const connectDb = () =>
     });
   });
 
+const connectDbWithRetry = async (attempts = 3) => {
+  let lastError;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      await connectDb();
+      return;
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === attempts) {
+        break;
+      }
+
+      console.warn(
+        `MySQL connection attempt ${attempt} failed (${error.code || error.message}). Retrying...`
+      );
+      await delay(1500 * attempt);
+    }
+  }
+
+  throw lastError;
+};
+
 //Contest Table 
 const initializeContestsTable = async () => {
   const createTableQuery = `
@@ -1896,7 +1924,7 @@ const initializeApp = ({ runMigrations = false } = {}) => {
   if (!startupPromise) {
     startupPromise = Promise.resolve()
       .then(() => validateEnvironment())
-      .then(() => connectDb())
+      .then(() => connectDbWithRetry())
       .then(() => {
         console.log("MySQL connection established.");
       });

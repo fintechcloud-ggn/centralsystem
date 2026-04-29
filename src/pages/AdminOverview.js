@@ -17,6 +17,31 @@ const quickActions = [
   { label: "Activity Logs", to: "/admin/activity-logs" }
 ];
 
+const getEmployeeImageSrc = (employee) =>
+  employee?.image_url || employee?.original_image_url || "";
+
+function EmployeeAvatar({ employee }) {
+  const [hasError, setHasError] = useState(false);
+  const imageSrc = getEmployeeImageSrc(employee);
+
+  if (!imageSrc || hasError) {
+    return (
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f1ecff] text-sm font-semibold uppercase text-[#6b5bb3]">
+        {employee?.employee_name?.trim()?.charAt(0) || "?"}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={imageSrc}
+      alt={employee?.employee_name || "Employee"}
+      className="h-12 w-12 rounded-full object-cover border border-[#ece9f8]"
+      onError={() => setHasError(true)}
+    />
+  );
+}
+
 function AdminOverview() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -206,6 +231,7 @@ function AdminOverview() {
           <table className="min-w-[1280px] w-full text-left text-sm text-slate-600">
             <thead className="bg-[#f8f7fc] text-xs uppercase tracking-wide text-slate-500">
               <tr>
+                <th className="px-4 py-3 font-semibold">Image</th>
                 <th className="px-4 py-3 font-semibold">Code</th>
                 <th className="px-4 py-3 font-semibold">Name</th>
                 <th className="px-4 py-3 font-semibold">Company</th>
@@ -224,6 +250,9 @@ function AdminOverview() {
             <tbody>
               {paginatedEmployees.map((item) => (
                 <tr key={item.employee_code} className="border-t border-[#efedf8]">
+                  <td className="px-4 py-3">
+                    <EmployeeAvatar employee={item} />
+                  </td>
                   <td className="px-4 py-3 font-medium text-slate-900">{item.employee_code || "-"}</td>
                   <td className="px-4 py-3">{item.employee_name || "-"}</td>
                   <td className="px-4 py-3">{item.company || "-"}</td>
