@@ -6,7 +6,9 @@ import Contest4 from "./Contest4";
 import QuoteCarousel from "./QuoteCarousel";
 import { apiUrl } from "../lib/api";
 
-function Carousel({ showFallback = false }) {
+const CONTEST_SLIDE_DURATION_MS = 30000;
+
+function Carousel({ showFallback = false, onCycleComplete }) {
   const [contests, setContests] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -40,16 +42,35 @@ function Carousel({ showFallback = false }) {
 
   // auto slide
   useEffect(() => {
-    if (contests.length <= 1) {
+    if (contests.length === 0) {
       return undefined;
     }
 
+    if (contests.length === 1) {
+      if (!onCycleComplete) {
+        return undefined;
+      }
+
+      const timeout = setTimeout(() => {
+        onCycleComplete();
+      }, CONTEST_SLIDE_DURATION_MS);
+
+      return () => clearTimeout(timeout);
+    }
+
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev === contests.length - 1 ? 0 : prev + 1));
-    }, 30000);
+      setCurrentIndex((prev) => {
+        if (prev === contests.length - 1) {
+          onCycleComplete?.();
+          return 0;
+        }
+
+        return prev + 1;
+      });
+    }, CONTEST_SLIDE_DURATION_MS);
 
     return () => clearInterval(interval);
-  }, [contests.length]);
+  }, [contests.length, onCycleComplete]);
 
   const getComponent = (design) => {
     if (design === "contest1") return Contest1;

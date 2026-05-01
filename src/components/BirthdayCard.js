@@ -4,8 +4,19 @@ import BalloonBackground from "./ui/demo";
 import { apiUrl } from "../lib/api";
 
 const CARD_DURATION_MS = 30000;
-const CAROUSEL_DURATION_MS = 90000;
 const SLIDE_TRANSITION_MS = 700;
+
+const getRestartPhase = (mode, birthdayCount, anniversaryCount) => {
+  if (mode === "birthday") {
+    return "birthday";
+  }
+
+  if (mode === "anniversary") {
+    return "anniversary";
+  }
+
+  return birthdayCount > 0 ? "birthday" : anniversaryCount > 0 ? "anniversary" : "carousel";
+};
 
 const getTodayParts = () => {
   const today = new Date();
@@ -276,6 +287,7 @@ function CelebrationCards({ mode = "auto" }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [phase, setPhase] = useState("loading");
   const [isTransitionEnabled, setIsTransitionEnabled] = useState(false);
+  const [hasActiveContests, setHasActiveContests] = useState(false);
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -317,12 +329,35 @@ function CelebrationCards({ mode = "auto" }) {
     fetchEmployees();
   }, [mode]);
 
+  useEffect(() => {
+    const fetchContests = async () => {
+      try {
+        const res = await fetch(apiUrl("/api/contests"));
+        const data = await res.json().catch(() => []);
+        if (!res.ok || !Array.isArray(data)) {
+          setHasActiveContests(false);
+          return;
+        }
+
+        const now = new Date();
+        const activeContests = data.filter((contest) => new Date(contest.ends_on) >= now);
+        setHasActiveContests(activeContests.length > 0);
+      } catch (error) {
+        console.error("Error fetching contests:", error);
+        setHasActiveContests(false);
+      }
+    };
+
+    fetchContests();
+  }, []);
+
   const activeUsers = useMemo(
     () => (phase === "birthday" ? birthdayUsers : phase === "anniversary" ? anniversaryUsers : []),
     [anniversaryUsers, birthdayUsers, phase]
   );
   const displayedUsers = activeUsers.length > 1 ? [...activeUsers, activeUsers[0]] : activeUsers;
   const activeDotIndex = activeUsers.length > 0 ? currentIndex % activeUsers.length : 0;
+  const canRestartFromCarousel = birthdayUsers.length > 0 || anniversaryUsers.length > 0;
 
   useEffect(() => {
     if (activeUsers.length === 0 || phase === "carousel") {
@@ -348,13 +383,22 @@ function CelebrationCards({ mode = "auto" }) {
           return activeUsers.length;
         }
 
+        if (!hasActiveContests) {
+          setIsTransitionEnabled(false);
+          setPhase(getRestartPhase(mode, birthdayUsers.length, anniversaryUsers.length));
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => setIsTransitionEnabled(true));
+          });
+          return 0;
+        }
+
         setPhase("carousel");
         return 0;
       });
     }, CARD_DURATION_MS);
 
     return () => clearInterval(interval);
-  }, [activeUsers.length, anniversaryUsers.length, mode, phase]);
+  }, [activeUsers.length, anniversaryUsers.length, birthdayUsers.length, hasActiveContests, mode, phase]);
 
   useEffect(() => {
     if (mode === "auto" || activeUsers.length <= 1 || currentIndex !== activeUsers.length) {
@@ -377,19 +421,18 @@ function CelebrationCards({ mode = "auto" }) {
       return undefined;
     }
 
-    const timeout = setTimeout(() => {
+    if (!hasActiveContests) {
+      setIsTransitionEnabled(false);
       setCurrentIndex(0);
-      if (mode === "birthday") {
-        setPhase("birthday");
-      } else if (mode === "anniversary") {
-        setPhase("anniversary");
-      } else {
-        setPhase(birthdayUsers.length > 0 ? "birthday" : "anniversary");
-      }
-    }, CAROUSEL_DURATION_MS);
+      setPhase(getRestartPhase(mode, birthdayUsers.length, anniversaryUsers.length));
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setIsTransitionEnabled(true));
+      });
+      return undefined;
+    }
 
-    return () => clearTimeout(timeout);
-  }, [anniversaryUsers.length, birthdayUsers.length, mode, phase]);
+    return undefined;
+  }, [anniversaryUsers.length, birthdayUsers.length, hasActiveContests, mode, phase]);
 
   if (phase === "loading") {
     return <div className="h-[100dvh] min-h-[100dvh] w-full bg-[#ececec]" />;
@@ -399,6 +442,18 @@ function CelebrationCards({ mode = "auto" }) {
     return (
       <Carousel
         showFallback={birthdayUsers.length === 0 && anniversaryUsers.length === 0}
+        onCycleComplete={
+          canRestartFromCarousel
+            ? () => {
+                setIsTransitionEnabled(false);
+                setCurrentIndex(0);
+                setPhase(getRestartPhase(mode, birthdayUsers.length, anniversaryUsers.length));
+                requestAnimationFrame(() => {
+                  requestAnimationFrame(() => setIsTransitionEnabled(true));
+                });
+              }
+            : undefined
+        }
       />
     );
   }
