@@ -61,7 +61,7 @@ function Contest2({ previewData }) {
                 </p>
                 <div className="mt-3 w-full h-[2px] bg-[#d9cc67]" />
                 <p className="mt-3 text-[#4f4a44] text-sm md:text-lg">
-                  Visit reallygreatsite.com to learn more about this contest.
+                  Visit FintechCloud.com to learn more about this contest.
                 </p>
               </div>
 
@@ -85,7 +85,7 @@ function Contest2({ previewData }) {
                 Showcase
               </div>
               <div className="text-xs md:text-sm font-semibold text-right">
-                +123-123-1234| www.FintechCloud.com
+                www.FintechCloud.com
                 <br />
                 Register now and join the contest.
               </div>
