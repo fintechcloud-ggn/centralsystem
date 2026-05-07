@@ -152,11 +152,11 @@ function BirthdayCard({ user }) {
             </div>
 
             <div className="relative flex min-h-0 w-full flex-1 flex-col items-stretch justify-center md:w-[58%] lg:w-[62%]">
-              <div className="mx-auto h-[34dvh] min-h-[220px] w-full flex-1 border-4 border-[#f6f6f6] p-0 sm:min-h-[280px] md:h-full md:min-h-0 md:max-w-[92%] lg:max-w-[88%]">
+              <div className="mx-auto flex h-[34dvh] min-h-[220px] w-full flex-1 items-start justify-center sm:min-h-[280px] md:h-full md:min-h-0 md:max-w-[92%] lg:max-w-[88%]">
                 <EmployeeImage
                   user={user}
-                  className="h-full w-full object-cover"
-                  fallbackClassName="bg-gray-100"
+                  className="block max-h-full max-w-full w-auto border-4 border-[#f6f6f6] bg-white object-contain object-top"
+                  fallbackClassName="max-h-full max-w-full border-4 border-[#f6f6f6] bg-gray-100"
                 />
               </div>
 
@@ -229,10 +229,10 @@ function AnniversaryCard({ user }) {
             ))}
           </div>
 
-          <div className="relative z-10 h-[clamp(15rem,72vw,24rem)] w-[clamp(15rem,72vw,24rem)] overflow-hidden rounded-[50%] border-4 border-[#b19435] bg-[#f2bed0] shadow-2xl md:h-[clamp(24rem,34vw,46rem)] md:w-[clamp(24rem,34vw,46rem)] min-[1800px]:border-[7px]">
+          <div className="relative z-10 flex h-[clamp(15rem,72vw,24rem)] w-[clamp(15rem,72vw,24rem)] items-start justify-center overflow-hidden rounded-[50%] border-4 border-[#b19435] bg-[#f2bed0] shadow-2xl md:h-[clamp(24rem,34vw,46rem)] md:w-[clamp(24rem,34vw,46rem)] min-[1800px]:border-[7px]">
             <EmployeeImage
               user={user}
-              className="h-full w-full object-cover"
+              className="block max-h-full max-w-full w-auto object-contain object-top"
               fallbackClassName="bg-[#f2bed0]"
             />
           </div>
