@@ -272,10 +272,10 @@ function FooterStrip() {
       </div>
       <div className="mx-auto mb-3 h-2 w-44 rounded-full bg-[#c8a15a] md:w-52" />
       <p className="break-words text-[10px] font-semibold text-[#1f232b] sm:text-xs md:text-sm">
-        Email: info@fintechcloud.in / Web: https://fintechcloud.in/
+        📧 info@fintechcloud.in / 🌐 https://fintechcloud.in/
       </p>
       <p className="mt-1 break-words text-[10px] font-semibold text-[#1f232b] sm:text-xs md:text-sm">
-        Phone: +91 1234567896 / 34567892345
+        📞 Phone: +91 1234567896 / 34567892345
       </p>
     </div>
   );
