@@ -29,10 +29,10 @@ function Contest2({ previewData }) {
   ];
 
   return (
-    <div className="flex min-h-full w-full items-center justify-center overflow-y-auto bg-white p-2 md:p-4 xl:overflow-hidden">
-      <div className="min-h-full w-full rounded-2xl border-4 border-[#d9d0c4] bg-[#efe5d7] shadow-2xl xl:h-full xl:overflow-hidden">
-        <div className="grid min-h-full grid-cols-1 gap-4 p-3 sm:p-4 md:p-5 xl:h-full xl:grid-cols-2">
-          <section className="relative rounded-2xl bg-[#f8f5ef] border-2 border-[#e8dfd2] px-4 md:px-8 py-5 md:py-7 flex flex-col">
+    <div className="contest-shell flex min-h-full w-full items-center justify-center overflow-y-auto bg-white p-2 md:p-4 xl:overflow-hidden">
+      <div className="contest-card min-h-full w-full rounded-2xl border-4 border-[#d9d0c4] bg-[#efe5d7] shadow-2xl xl:h-full xl:overflow-hidden">
+        <div className="contest-layout grid min-h-full grid-cols-1 gap-4 p-3 sm:p-4 md:p-5 xl:h-full xl:grid-cols-2">
+          <section className="contest-panel relative rounded-2xl bg-[#f8f5ef] border-2 border-[#e8dfd2] px-4 md:px-8 py-5 md:py-7 flex flex-col">
             <div className="absolute -top-2 left-8 w-20 h-3 bg-[#efe5d7] rotate-[-3deg]" />
             <div className="absolute -top-2 right-8 w-20 h-3 bg-[#efe5d7] rotate-[3deg]" />
 
@@ -92,7 +92,7 @@ function Contest2({ previewData }) {
             </div>
           </section>
 
-          <section className="rounded-2xl bg-[#f8f6fc] border-2 border-[#ded9eb] p-4 md:p-6 flex flex-col">
+          <section className="contest-panel contest-leaderboard rounded-2xl bg-[#f8f6fc] border-2 border-[#ded9eb] p-4 md:p-6 flex flex-col">
             <div className="flex items-center justify-between">
               <h3 className="text-[#351c55] text-3xl md:text-5xl font-black uppercase">
                 Top 3

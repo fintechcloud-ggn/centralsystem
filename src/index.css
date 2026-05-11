@@ -44,6 +44,358 @@ code {
 @tailwind components;
 @tailwind utilities;
 
+.contest-shell {
+  min-height: 100dvh;
+}
+
+.contest-card {
+  min-height: calc(100dvh - 1rem);
+  overflow: hidden;
+}
+
+.contest-layout,
+.contest-panel,
+.contest-leaderboard {
+  min-width: 0;
+}
+
+.contest-panel {
+  min-height: 0;
+}
+
+.contest-panel h1,
+.contest-panel h2,
+.contest-panel h3,
+.contest-panel p,
+.contest-panel span,
+.contest-card h1,
+.contest-card h2,
+.contest-card h3,
+.contest-card p,
+.contest-card span {
+  overflow-wrap: anywhere;
+}
+
+.contest-leaderboard > div:nth-of-type(2) {
+  min-height: 0;
+}
+
+@media (min-width: 1024px) {
+  .contest-shell {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .contest-card {
+    height: calc(100dvh - 2rem);
+    min-height: 0;
+  }
+
+  .contest-layout {
+    height: 100%;
+    min-height: 0;
+    align-items: stretch;
+  }
+
+  .contest-layout.grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .contest-layout.flex {
+    flex-direction: row;
+  }
+
+  .contest-panel {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .contest-leaderboard > div:nth-of-type(2) {
+    overflow: hidden;
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 820px) {
+  .contest-shell {
+    padding: 0.5rem !important;
+  }
+
+  .contest-card {
+    height: calc(100dvh - 1rem);
+  }
+
+  .contest-layout {
+    gap: clamp(0.35rem, 1vh, 0.65rem) !important;
+    padding: clamp(0.35rem, 1vh, 0.65rem) !important;
+  }
+
+  .contest-panel {
+    border-radius: 1rem !important;
+    padding: clamp(0.45rem, 1vh, 0.75rem) !important;
+  }
+
+  .contest-panel h1,
+  .contest-card h1 {
+    font-size: clamp(1.6rem, 3.7vw, 3.9rem) !important;
+    line-height: 0.95 !important;
+  }
+
+  .contest-panel h2,
+  .contest-panel h3,
+  .contest-card h2,
+  .contest-card h3 {
+    font-size: clamp(1.25rem, 2.45vw, 2.55rem) !important;
+    line-height: 1 !important;
+  }
+
+  .contest-panel p {
+    line-height: 1.12 !important;
+  }
+
+  .contest-panel .mb-3,
+  .contest-panel .md\:mb-4 {
+    margin-bottom: 0.35rem !important;
+  }
+
+  .contest-panel .mt-3,
+  .contest-panel .md\:mt-4,
+  .contest-panel .mt-4,
+  .contest-panel .md\:mt-6,
+  .contest-panel .mt-5,
+  .contest-panel .md\:mt-8,
+  .contest-panel .mt-8,
+  .contest-panel .md\:mt-10,
+  .contest-panel .mt-12,
+  .contest-panel .md\:mt-20 {
+    margin-top: 0.45rem !important;
+  }
+
+  .contest-panel .pt-4,
+  .contest-panel .pt-6 {
+    padding-top: 0.45rem !important;
+  }
+
+  .contest-panel .rounded-3xl,
+  .contest-panel .rounded-2xl,
+  .contest-panel .rounded-xl {
+    border-radius: 0.85rem !important;
+  }
+
+  .contest-panel .border-4 {
+    border-width: 2px !important;
+  }
+
+  .contest-panel .shadow-\[8px_8px_0_rgba\(0\,0\,0\,0\.15\)\] {
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12) !important;
+  }
+
+  .contest-panel .w-28 {
+    width: 4.75rem !important;
+  }
+
+  .contest-panel .h-20 {
+    height: 3.35rem !important;
+  }
+
+  .contest-panel .w-20,
+  .contest-panel .md\:w-24 {
+    width: 3.75rem !important;
+  }
+
+  .contest-panel .h-16,
+  .contest-panel .md\:h-20 {
+    height: 3rem !important;
+  }
+
+  .contest-panel .w-10,
+  .contest-panel .md\:w-12,
+  .contest-panel .h-10,
+  .contest-panel .md\:h-12 {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+
+  .contest-panel .text-xl,
+  .contest-panel .md\:text-2xl {
+    font-size: clamp(1rem, 1.55vw, 1.45rem) !important;
+  }
+
+  .contest-panel .text-base,
+  .contest-panel .md\:text-lg,
+  .contest-panel .md\:text-sm,
+  .contest-panel .text-sm,
+  .contest-panel .text-\[11px\] {
+    font-size: clamp(0.65rem, 0.9vw, 0.9rem) !important;
+  }
+
+  .contest-leaderboard > div:nth-of-type(2) {
+    display: grid;
+    gap: 0.45rem;
+    margin-top: 0.45rem !important;
+  }
+
+  .contest-leaderboard > div:nth-of-type(2) > div {
+    padding: 0.55rem !important;
+    border-radius: 0.85rem !important;
+  }
+
+  .contest-leaderboard .w-11,
+  .contest-leaderboard .md\:w-14,
+  .contest-leaderboard .h-11,
+  .contest-leaderboard .md\:h-14 {
+    width: 2.4rem !important;
+    height: 2.4rem !important;
+  }
+
+  .contest-leaderboard .px-4,
+  .contest-leaderboard .py-3 {
+    padding: 0.55rem 0.75rem !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .contest-card {
+    overflow: visible;
+  }
+
+  .contest-layout {
+    min-height: auto;
+  }
+}
+
+.contest3-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.contest3-hero {
+  display: grid;
+  grid-template-columns: clamp(5.25rem, 19vw, 12rem) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(0.75rem, 2.4vw, 2rem);
+  padding-top: clamp(0.5rem, 2vh, 1.5rem);
+}
+
+.contest3-wheel {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  min-width: 0;
+}
+
+.contest3-heading {
+  min-width: 0;
+}
+
+.contest3-title {
+  font-size: clamp(1.7rem, 4.8vw, 3.9rem);
+}
+
+.contest3-tagline {
+  font-size: clamp(1rem, 2.4vw, 1.65rem);
+}
+
+.contest3-description {
+  font-size: clamp(1rem, 2.7vw, 2rem);
+  line-height: 1.12;
+}
+
+.contest3-date-grid {
+  align-items: center;
+}
+
+.contest3-date-pill {
+  font-size: clamp(1.1rem, 3.2vw, 2.35rem);
+  line-height: 1;
+  padding-inline: clamp(0.75rem, 2vw, 2rem);
+}
+
+.contest3-cta {
+  font-size: clamp(1.2rem, 3.6vw, 2.7rem);
+  line-height: 1.1;
+  padding-inline: clamp(0.75rem, 2vw, 2rem);
+}
+
+.contest3-prize {
+  margin-top: clamp(1.5rem, 6vh, 5rem);
+}
+
+.contest3-prize-label {
+  font-size: clamp(1.8rem, 5.4vw, 4.4rem);
+  line-height: 1;
+}
+
+.contest3-prize-value {
+  font-size: clamp(4rem, 12vw, 9rem);
+}
+
+@media (max-width: 680px) {
+  .contest3-hero {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .contest3-wheel {
+    width: min(44vw, 9rem);
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 820px) {
+  .contest3-panel {
+    justify-content: space-between;
+  }
+
+  .contest3-hero {
+    grid-template-columns: clamp(4.75rem, 10vw, 9rem) minmax(0, 1fr);
+    gap: clamp(0.5rem, 1.4vw, 1.25rem);
+    padding-top: 0;
+  }
+
+  .contest3-title {
+    font-size: clamp(1.6rem, 3.4vw, 3rem) !important;
+  }
+
+  .contest3-tagline {
+    font-size: clamp(0.95rem, 1.7vw, 1.35rem) !important;
+  }
+
+  .contest3-description {
+    font-size: clamp(0.95rem, 1.9vw, 1.45rem) !important;
+  }
+
+  .contest3-details {
+    margin-top: clamp(0.4rem, 1.3vh, 0.9rem) !important;
+  }
+
+  .contest3-date-grid {
+    gap: clamp(0.45rem, 1vw, 0.75rem) !important;
+  }
+
+  .contest3-date-pill {
+    font-size: clamp(1rem, 2vw, 1.75rem) !important;
+    padding-block: clamp(0.45rem, 1vh, 0.7rem) !important;
+  }
+
+  .contest3-cta {
+    border-radius: 999px !important;
+    font-size: clamp(1.05rem, 2.35vw, 2rem) !important;
+    margin-top: clamp(0.35rem, 1vh, 0.65rem) !important;
+    padding-block: clamp(0.45rem, 1vh, 0.7rem) !important;
+  }
+
+  .contest3-prize {
+    margin-top: clamp(0.9rem, 3vh, 2.25rem) !important;
+  }
+
+  .contest3-prize-label {
+    font-size: clamp(1.7rem, 4vw, 3.5rem) !important;
+  }
+
+  .contest3-prize-value {
+    font-size: clamp(4.25rem, 8vw, 7rem) !important;
+  }
+}
+
 .birthday-card__frame {
   padding: clamp(0.75rem, 2vw, 3.5rem);
 }
