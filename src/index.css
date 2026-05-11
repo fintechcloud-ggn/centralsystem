@@ -43,3 +43,178 @@ code {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.birthday-card__frame {
+  padding: clamp(0.75rem, 2vw, 3.5rem);
+}
+
+.birthday-card__inner {
+  width: min(100%, 2400px);
+  margin: 0 auto;
+  gap: clamp(0.75rem, 1.5vh, 2rem);
+}
+
+.birthday-card__main {
+  gap: clamp(0.75rem, 2vw, 4rem);
+}
+
+.birthday-card__circle {
+  left: clamp(0.75rem, 2vw, 3rem);
+  top: clamp(0.75rem, 2vh, 3rem);
+  width: clamp(1.5rem, 1.4vw, 3rem);
+  height: clamp(1.5rem, 1.4vw, 3rem);
+  border-width: clamp(2px, 0.12vw, 4px);
+}
+
+.birthday-card__triangle {
+  right: clamp(0.75rem, 2vw, 3rem);
+  top: clamp(5rem, 10vh, 12rem);
+  border-left-width: clamp(10px, 0.75vw, 20px);
+  border-right-width: clamp(10px, 0.75vw, 20px);
+  border-top-width: clamp(16px, 1.1vw, 30px);
+}
+
+.birthday-card__copy {
+  text-align: left;
+}
+
+.birthday-card__brand {
+  font-size: clamp(1.25rem, 4.8vw, 2rem);
+}
+
+.birthday-card__team {
+  margin-top: -0.25rem;
+  font-size: clamp(2rem, 8vw, 3.25rem);
+}
+
+.birthday-card__happy {
+  margin-top: clamp(0.75rem, 2vh, 2.25rem);
+  font-size: clamp(3.5rem, 16vw, 6.5rem);
+}
+
+.birthday-card__title {
+  margin-top: clamp(-1.25rem, -1vw, -0.35rem);
+  font-size: clamp(2.7rem, 12vw, 5.25rem);
+}
+
+.birthday-card__quote {
+  margin-top: clamp(0.75rem, 2vh, 2rem);
+  font-size: clamp(3rem, 10vw, 5rem);
+}
+
+.birthday-card__message {
+  margin-top: clamp(-1.5rem, -1.5vh, -0.65rem);
+  font-size: clamp(1rem, 4vw, 1.35rem);
+  line-height: 1.45;
+}
+
+.birthday-card__photo-wrap {
+  height: min(48dvh, 34rem);
+  min-height: 220px;
+}
+
+.birthday-card__photo {
+  border: clamp(4px, 0.3vw, 10px) solid #f6f6f6;
+}
+
+.birthday-card__name {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: clamp(0.5rem, 1.4vh, 1.4rem) clamp(1rem, 3vw, 3rem);
+}
+
+.birthday-card__name-text {
+  font-size: clamp(1.1rem, 5vw, 1.6rem);
+}
+
+.birthday-card__role {
+  font-size: clamp(0.75rem, 2.8vw, 0.9rem);
+}
+
+.birthday-card__footer {
+  padding-top: clamp(0.5rem, 1vh, 1rem);
+}
+
+.birthday-card__footer-bar {
+  width: clamp(11rem, 14vw, 24rem);
+  height: clamp(0.5rem, 0.5vw, 0.9rem);
+}
+
+.birthday-card__footer-text {
+  font-size: clamp(0.625rem, 2.8vw, 0.85rem);
+}
+
+@media (min-width: 768px) {
+  .birthday-card__copy {
+    width: 40%;
+    padding-right: clamp(1rem, 2.5vw, 5rem);
+  }
+
+  .birthday-card__visual {
+    width: 60%;
+  }
+
+  .birthday-card__brand {
+    font-size: clamp(1.75rem, 1.7vw, 3.4rem);
+  }
+
+  .birthday-card__team {
+    font-size: clamp(2.75rem, 3vw, 5.8rem);
+  }
+
+  .birthday-card__happy {
+    font-size: clamp(5rem, 5.8vw, 11rem);
+  }
+
+  .birthday-card__title {
+    font-size: clamp(4.25rem, 4.4vw, 8.25rem);
+  }
+
+  .birthday-card__message {
+    font-size: clamp(1.35rem, 1.45vw, 2.55rem);
+  }
+
+  .birthday-card__photo-wrap {
+    height: 100%;
+    min-height: 0;
+    max-width: min(92%, calc((100dvh - 6rem) * 1.08));
+  }
+
+  .birthday-card__name {
+    right: clamp(-5rem, -3.5vw, -1rem);
+    bottom: clamp(-2.5rem, -2.8vh, -1rem);
+    width: auto;
+    min-width: clamp(22rem, 24vw, 42rem);
+    margin-top: 0;
+  }
+
+  .birthday-card__name-text {
+    font-size: clamp(1.8rem, 2.1vw, 4rem);
+  }
+
+  .birthday-card__role {
+    font-size: clamp(1rem, 0.95vw, 1.8rem);
+  }
+
+  .birthday-card__footer {
+    padding-bottom: clamp(0.5rem, 1vh, 1rem);
+  }
+
+  .birthday-card__footer-text {
+    font-size: clamp(0.85rem, 0.8vw, 1.45rem);
+  }
+}
+
+@media (min-width: 1600px) {
+  .birthday-card__copy {
+    width: 37%;
+  }
+
+  .birthday-card__visual {
+    width: 63%;
+  }
+
+  .birthday-card__photo-wrap {
+    max-width: min(90%, calc((100dvh - 7rem) * 1.18));
+  }
+}

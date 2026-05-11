@@ -113,36 +113,36 @@ function EmployeeImage({ user, className, fallbackClassName }) {
 
 function BirthdayCard({ user }) {
   return (
-    <div className="relative h-full w-full overflow-y-auto md:overflow-hidden">
+    <div className="birthday-card relative h-full w-full overflow-y-auto overflow-x-hidden md:overflow-hidden">
       <BalloonBackground className="absolute inset-0 opacity-60" />
-      <div className="relative z-10 flex min-h-[100dvh] w-full flex-col border border-white/20 bg-[#ececec]/92 px-3 py-3 backdrop-blur-[2px] sm:px-5 md:h-full md:px-6 md:py-4">
-        <div className="absolute left-3 top-3 hidden h-6 w-6 rounded-full border-2 border-[#cfcfcf] sm:block" />
-        <div className="absolute right-3 top-24 hidden h-0 w-0 border-l-[10px] border-l-transparent border-t-[16px] border-t-[#cfcfcf] border-r-[10px] border-r-transparent sm:block" />
+      <div className="birthday-card__frame relative z-10 flex min-h-[100dvh] w-full flex-col border border-white/20 bg-[#ececec]/92 backdrop-blur-[2px] md:h-full">
+        <div className="birthday-card__circle absolute hidden rounded-full border-[#cfcfcf] sm:block" />
+        <div className="birthday-card__triangle absolute hidden h-0 w-0 border-l-transparent border-r-transparent border-t-[#cfcfcf] sm:block" />
 
-        <div className="flex min-h-0 flex-1 flex-col justify-between gap-3 md:gap-4">
-          <div className="flex min-h-0 w-full flex-1 flex-col gap-3 md:gap-4 md:flex-row md:items-stretch">
-            <div className="w-full shrink-0 md:flex md:w-[42%] md:flex-col md:justify-center md:pr-6 lg:w-[38%]">
-              <h3 className="text-xl font-extrabold uppercase leading-tight tracking-wide text-[#c8a15a] sm:text-2xl md:text-3xl">
+        <div className="birthday-card__inner flex min-h-0 flex-1 flex-col justify-between">
+          <div className="birthday-card__main flex min-h-0 w-full flex-1 flex-col md:flex-row md:items-stretch">
+            <div className="birthday-card__copy w-full shrink-0 md:flex md:flex-col md:justify-center">
+              <h3 className="birthday-card__brand font-extrabold uppercase leading-tight tracking-wide text-[#c8a15a]">
                 Fintech Cloud
               </h3>
-              <p className="-mt-1 text-3xl font-black uppercase text-[#1b1d22] sm:text-4xl md:text-5xl">
+              <p className="birthday-card__team font-black uppercase leading-none text-[#1b1d22]">
                 Team
               </p>
 
               <h2
-                className="mt-3 text-5xl leading-none text-[#1e2228] sm:text-6xl md:mt-5 md:text-7xl lg:text-8xl"
+                className="birthday-card__happy leading-none text-[#1e2228]"
                 style={{ fontFamily: "cursive" }}
               >
                 happy
               </h2>
-              <h1 className="-mt-2 text-4xl font-black uppercase tracking-wide text-[#c8a15a] sm:text-5xl md:text-6xl lg:text-7xl">
+              <h1 className="birthday-card__title font-black uppercase leading-none tracking-wide text-[#c8a15a]">
                 birthday
               </h1>
 
-              <p className="mt-3 text-4xl leading-none text-[#c8a15a] sm:text-5xl md:mt-5 md:text-6xl">
+              <p className="birthday-card__quote leading-none text-[#c8a15a]">
                 "
               </p>
-              <p className="-mt-3 text-base font-bold leading-6 text-[#54575e] sm:text-lg sm:leading-7 md:text-2xl md:leading-9">
+              <p className="birthday-card__message font-bold text-[#54575e]">
                 Wishing you a beautiful day
                 <br />
                 with good health and
@@ -151,20 +151,20 @@ function BirthdayCard({ user }) {
               </p>
             </div>
 
-            <div className="relative flex min-h-0 w-full flex-1 flex-col items-stretch justify-center md:w-[58%] lg:w-[62%]">
-              <div className="mx-auto flex h-[34dvh] min-h-[220px] w-full flex-1 items-start justify-center sm:min-h-[280px] md:h-full md:min-h-0 md:max-w-[92%] lg:max-w-[88%]">
+            <div className="birthday-card__visual relative flex min-h-0 w-full flex-1 flex-col items-stretch justify-center">
+              <div className="birthday-card__photo-wrap mx-auto flex w-full flex-1 items-start justify-center">
                 <EmployeeImage
                   user={user}
-                  className="block max-h-full max-w-full w-auto border-4 border-[#f6f6f6] bg-white object-contain object-top"
-                  fallbackClassName="max-h-full max-w-full border-4 border-[#f6f6f6] bg-gray-100"
+                  className="birthday-card__photo block h-auto max-h-full w-auto max-w-full bg-white object-contain object-top"
+                  fallbackClassName="birthday-card__photo max-h-full max-w-full bg-gray-100"
                 />
               </div>
 
-              <div className="mt-2 w-full bg-[#c8a15a] px-4 py-2 text-center md:absolute md:-bottom-6 md:-right-4 md:mt-0 md:w-auto md:min-w-[360px] md:px-9 md:py-4 lg:-right-16 lg:min-w-[380px]">
-                <h2 className="break-words text-lg font-black uppercase leading-tight text-[#1f232b] sm:text-xl md:text-3xl md:leading-none">
+              <div className="birthday-card__name bg-[#c8a15a] text-center md:absolute">
+                <h2 className="birthday-card__name-text break-words font-black uppercase leading-tight text-[#1f232b] md:leading-none">
                   {user.employee_name}
                 </h2>
-                <p className="mt-1 text-xs font-bold uppercase text-[#f6f6f6] md:text-base">
+                <p className="birthday-card__role mt-1 font-bold uppercase text-[#f6f6f6]">
                   Team Member
                 </p>
               </div>
@@ -259,7 +259,7 @@ function DecorativeBranches() {
 
 function FooterStrip() {
   return (
-    <div className="relative shrink-0 pb-6 pt-2 text-center md:pb-2">
+    <div className="birthday-card__footer relative shrink-0 pb-6 text-center md:pb-2">
       <div className="absolute bottom-0 left-0 hidden grid-cols-4 gap-2 md:grid">
         {Array.from({ length: 16 }).map((_, i) => (
           <span key={`left-dot-${i}`} className="h-1 w-1 rounded-full bg-[#6d6f75]" />
@@ -270,11 +270,11 @@ function FooterStrip() {
           <span key={`right-dot-${i}`} className="h-1 w-1 rounded-full bg-[#6d6f75]" />
         ))}
       </div>
-      <div className="mx-auto mb-3 h-2 w-44 rounded-full bg-[#c8a15a] md:w-52" />
-      <p className="break-words text-[10px] font-semibold text-[#1f232b] sm:text-xs md:text-sm">
+      <div className="birthday-card__footer-bar mx-auto mb-3 rounded-full bg-[#c8a15a]" />
+      <p className="birthday-card__footer-text break-words font-semibold text-[#1f232b]">
         📧 info@fintechcloud.in / 🌐 https://fintechcloud.in/
       </p>
-      <p className="mt-1 break-words text-[10px] font-semibold text-[#1f232b] sm:text-xs md:text-sm">
+      <p className="birthday-card__footer-text mt-1 break-words font-semibold text-[#1f232b]">
         📞 +91 9650590504
       </p>
     </div>
