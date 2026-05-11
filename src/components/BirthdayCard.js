@@ -128,7 +128,9 @@ function BirthdayCard({ user }) {
               <p className="-mt-1 text-3xl font-black uppercase text-[#1b1d22] sm:text-4xl md:text-5xl">
                 Team
               </p>
-
+{/* <p className="-mt-1 text-3xl font-black uppercase text-[#1b1d22] sm:text-4xl md:text-5xl">
+                Team
+              </p> */}
               <h2
                 className="mt-3 text-5xl leading-none text-[#1e2228] sm:text-6xl md:mt-5 md:text-7xl lg:text-8xl"
                 style={{ fontFamily: "cursive" }}
