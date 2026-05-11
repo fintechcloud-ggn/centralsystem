@@ -128,7 +128,9 @@ function BirthdayCard({ user }) {
               <p className="birthday-card__team font-black uppercase leading-none text-[#1b1d22]">
                 Team
               </p>
-
+{/* <p className="-mt-1 text-3xl font-black uppercase text-[#1b1d22] sm:text-4xl md:text-5xl">
+                Team
+              </p> */}
               <h2
                 className="birthday-card__happy leading-none text-[#1e2228]"
                 style={{ fontFamily: "cursive" }}
@@ -151,12 +153,12 @@ function BirthdayCard({ user }) {
               </p>
             </div>
 
-            <div className="birthday-card__visual relative flex min-h-0 w-full flex-1 flex-col items-stretch justify-center">
-              <div className="birthday-card__photo-wrap mx-auto flex w-full flex-1 items-start justify-center">
+            <div className="relative flex min-h-0 w-full flex-1 flex-col items-stretch justify-center md:w-[58%] lg:w-[62%]">
+              <div className="mx-auto flex h-[34dvh] min-h-[220px] w-full flex-1 items-center justify-center border-4 border-[#f6f6f6] bg-white p-0 sm:min-h-[280px] md:h-full md:min-h-0 md:max-w-[92%] lg:max-w-[88%]">
                 <EmployeeImage
                   user={user}
-                  className="birthday-card__photo block h-auto max-h-full w-auto max-w-full bg-white object-contain object-top"
-                  fallbackClassName="birthday-card__photo max-h-full max-w-full bg-gray-100"
+                  className="h-full w-full object-cover"
+                  fallbackClassName="bg-gray-100"
                 />
               </div>
 
@@ -232,7 +234,7 @@ function AnniversaryCard({ user }) {
           <div className="relative z-10 flex h-[clamp(15rem,72vw,24rem)] w-[clamp(15rem,72vw,24rem)] items-start justify-center overflow-hidden rounded-[50%] border-4 border-[#b19435] bg-[#f2bed0] shadow-2xl md:h-[clamp(24rem,34vw,46rem)] md:w-[clamp(24rem,34vw,46rem)] min-[1800px]:border-[7px]">
             <EmployeeImage
               user={user}
-              className="block max-h-full max-w-full w-auto object-contain object-top"
+              className="h-full w-full object-cover"
               fallbackClassName="bg-[#f2bed0]"
             />
           </div>
@@ -270,12 +272,12 @@ function FooterStrip() {
           <span key={`right-dot-${i}`} className="h-1 w-1 rounded-full bg-[#6d6f75]" />
         ))}
       </div>
-      <div className="birthday-card__footer-bar mx-auto mb-3 rounded-full bg-[#c8a15a]" />
-      <p className="birthday-card__footer-text break-words font-semibold text-[#1f232b]">
-        📧 info@fintechcloud.in / 🌐 https://fintechcloud.in/
+      <div className="mx-auto mb-3 h-2 w-44 rounded-full bg-[#c8a15a] md:w-52" />
+      <p className="break-words text-[10px] font-semibold text-[#1f232b] sm:text-xs md:text-sm">
+        Email: info@fintechcloud.in / Web: https://fintechcloud.in/
       </p>
-      <p className="birthday-card__footer-text mt-1 break-words font-semibold text-[#1f232b]">
-        📞 +91 9650590504
+      <p className="mt-1 break-words text-[10px] font-semibold text-[#1f232b] sm:text-xs md:text-sm">
+        Phone: +91 1234567896 / 34567892345
       </p>
     </div>
   );

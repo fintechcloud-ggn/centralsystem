@@ -119,6 +119,7 @@ function DeleteContest() {
                   <td className="px-4 py-3 text-slate-700">{String(contest.starts_on || "").slice(0, 10)}</td>
                   <td className="px-4 py-3 text-slate-700">{String(contest.ends_on || "").slice(0, 10)}</td>
                   <td className="px-4 py-3 text-slate-700">{contest.design_type}</td>
+                  {/* <td className="px-4 py-3 text-slate-700">{contest.design_type}</td> */}
                   <td className="px-4 py-3">
                     <button
                       type="button"
