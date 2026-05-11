@@ -83,8 +83,8 @@ export default function BalloonBackground({ className }) {
           : canvas.clientHeight + this.r + 200;
 
         this.colorSet = colors[Math.floor(Math.random() * colors.length)];
-        this.speed = Math.random() * 1 + 0.4;
-        this.wobbleSpeed = Math.random() * 0.02 + 0.01;
+        this.speed = Math.random() * 1.15 + 0.6;
+        this.wobbleSpeed = Math.random() * 0.024 + 0.012;
         this.angle = Math.random() * Math.PI * 2;
         this.popped = false;
         this.prevX = this.x;
