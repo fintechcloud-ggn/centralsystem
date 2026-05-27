@@ -397,17 +397,24 @@ code {
 }
 
 .birthday-card__frame {
-  padding: clamp(0.75rem, 2vw, 3.5rem);
+  padding: clamp(1rem, 4vw, 2rem);
 }
 
 .birthday-card__inner {
-  width: min(100%, 2400px);
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: clamp(1rem, 2.5vh, 1.75rem);
+  width: min(100%, 2200px);
+  min-height: calc(100dvh - clamp(2rem, 8vw, 4rem));
   margin: 0 auto;
-  gap: clamp(0.75rem, 1.5vh, 2rem);
 }
 
 .birthday-card__main {
-  gap: clamp(0.75rem, 1.4vw, 2.5rem);
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: start;
+  gap: clamp(1rem, 3vw, 2rem);
+  min-height: 0;
 }
 
 .birthday-card__circle {
@@ -461,13 +468,34 @@ code {
   line-height: 1.34;
 }
 
+.birthday-card__visual {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: start;
+  justify-items: center;
+  gap: clamp(0.5rem, 1.25vh, 0.9rem);
+  min-width: 0;
+  min-height: 0;
+}
+
 .birthday-card__photo-wrap {
-  height: min(48dvh, 34rem);
-  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  border: clamp(4px, 0.35vw, 8px) solid #f6f6f6;
+  background: white;
 }
 
 .birthday-card__photo {
-  border: clamp(4px, 0.3vw, 10px) solid #f6f6f6;
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: min(48dvh, 34rem);
+  min-height: 220px;
+  object-fit: contain;
 }
 
 .birthday-card__name {
@@ -498,52 +526,65 @@ code {
 }
 
 @media (min-width: 768px) {
-  .birthday-card__copy {
-    flex: 0 0 clamp(20rem, 34vw, 40rem);
-    width: auto;
-    padding-right: clamp(0.5rem, 1.25vw, 2.25rem);
+  .birthday-card__frame {
+    padding: clamp(1rem, 2.25vw, 2.75rem);
   }
 
-  .birthday-card__visual {
-    flex: 1 1 0;
+  .birthday-card__inner {
+    min-height: calc(100dvh - clamp(2rem, 4.5vw, 5.5rem));
+  }
+
+  .birthday-card__main {
+    grid-template-columns: minmax(16rem, 34%) minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(1.25rem, 3vw, 4rem);
+  }
+
+  .birthday-card__copy {
     min-width: 0;
-    width: auto;
+    padding-right: clamp(0.25rem, 1vw, 1.25rem);
   }
 
   .birthday-card__brand {
-    font-size: clamp(1.75rem, 1.7vw, 3.4rem);
+    font-size: clamp(1.25rem, 1.45vw, 2rem);
   }
 
   .birthday-card__team {
-    font-size: clamp(2.75rem, 3vw, 5.8rem);
+    font-size: clamp(2rem, 2.55vw, 3.5rem);
   }
 
   .birthday-card__happy {
-    font-size: clamp(5rem, 5.8vw, 11rem);
+    font-size: clamp(3.6rem, 5.1vw, 7rem);
   }
 
   .birthday-card__title {
-    font-size: clamp(4.25rem, 4.4vw, 8.25rem);
+    font-size: clamp(3.2rem, 4.35vw, 6rem);
   }
 
   .birthday-card__message {
-    width: min(52vw, 58rem);
-    font-size: clamp(2.05rem, 2.15vw, 3.65rem);
+    width: min(100%, 34rem);
+    font-size: clamp(1.35rem, 1.8vw, 2.25rem);
     line-height: 1.28;
   }
 
+  .birthday-card__visual {
+    align-content: center;
+  }
+
   .birthday-card__photo-wrap {
-    height: 100%;
+    max-width: 100%;
+  }
+
+  .birthday-card__photo {
+    height: min(62dvh, 46rem);
     min-height: 0;
-    max-width: min(100%, calc((100dvh - 5rem) * 1.2));
   }
 
   .birthday-card__name {
-    right: clamp(0.75rem, 1.5vw, 2rem);
-    bottom: clamp(0.75rem, 1.5vh, 1.5rem);
-    width: auto;
-    min-width: clamp(18rem, 23vw, 34rem);
-    max-width: min(90%, 42rem);
+    justify-self: end;
+    width: min(100%, 26rem);
+    min-width: min(18rem, 100%);
+    max-width: 100%;
     margin-top: 0;
   }
 
@@ -565,34 +606,32 @@ code {
 }
 
 @media (min-width: 1600px) {
-  .birthday-card__copy {
-    flex-basis: clamp(24rem, 32vw, 48rem);
-  }
-
-  .birthday-card__visual {
-    flex: 1 1 0;
+  .birthday-card__main {
+    grid-template-columns: minmax(22rem, 32%) minmax(0, 1fr);
   }
 
   .birthday-card__photo-wrap {
-    max-width: min(100%, calc((100dvh - 6rem) * 1.22));
+    max-width: 100%;
+  }
+
+  .birthday-card__photo {
+    height: min(66dvh, 56rem);
   }
 }
 
 @media (min-width: 1024px) and (max-height: 820px) {
   .birthday-card__frame {
-    padding: clamp(0.6rem, 1.4vw, 1.75rem);
+    padding: clamp(0.75rem, 1.4vw, 1.35rem);
   }
 
   .birthday-card__inner {
-    gap: clamp(0.35rem, 0.9vh, 0.8rem);
+    gap: clamp(0.5rem, 1vh, 0.75rem);
+    min-height: calc(100dvh - clamp(1.5rem, 2.8vw, 2.7rem));
   }
 
   .birthday-card__main {
-    gap: clamp(0.75rem, 1.1vw, 1.5rem);
-  }
-
-  .birthday-card__copy {
-    flex-basis: clamp(17rem, 31vw, 31rem);
+    grid-template-columns: minmax(15rem, 32%) minmax(0, 1fr);
+    gap: clamp(0.85rem, 1.7vw, 2rem);
   }
 
   .birthday-card__brand {
@@ -618,16 +657,21 @@ code {
   }
 
   .birthday-card__message {
-    width: min(32vw, 31rem);
+    width: min(100%, 28rem);
     font-size: clamp(1.25rem, 1.85vw, 1.8rem);
     line-height: 1.18;
   }
 
   .birthday-card__photo-wrap {
-    max-width: min(100%, calc((100dvh - 4rem) * 1.32));
+    max-width: 100%;
+  }
+
+  .birthday-card__photo {
+    height: min(60dvh, calc(100dvh - 9rem));
   }
 
   .birthday-card__name {
+    width: min(100%, 20rem);
     padding: clamp(0.4rem, 0.9vh, 0.75rem) clamp(1rem, 2vw, 2rem);
   }
 
@@ -642,5 +686,23 @@ code {
   .birthday-card__footer {
     padding-top: 0.35rem;
     padding-bottom: 0.25rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .birthday-card__copy {
+    text-align: center;
+  }
+
+  .birthday-card__message {
+    margin-inline: auto;
+  }
+
+  .birthday-card__visual {
+    align-content: start;
+  }
+
+  .birthday-card__name {
+    margin-inline: auto;
   }
 }

@@ -119,9 +119,9 @@ function BirthdayCard({ user }) {
         <div className="birthday-card__circle absolute hidden rounded-full border-[#cfcfcf] sm:block" />
         <div className="birthday-card__triangle absolute hidden h-0 w-0 border-l-transparent border-r-transparent border-t-[#cfcfcf] sm:block" />
 
-        <div className="birthday-card__inner flex min-h-0 flex-1 flex-col justify-between">
-          <div className="birthday-card__main flex min-h-0 w-full flex-1 flex-col md:flex-row md:items-stretch">
-            <div className="birthday-card__copy w-full shrink-0 md:flex md:flex-col md:justify-center">
+        <div className="birthday-card__inner">
+          <div className="birthday-card__main">
+            <div className="birthday-card__copy">
               <h3 className="birthday-card__brand font-extrabold uppercase leading-tight tracking-wide text-[#c8a15a]">
                 Fintech Cloud
               </h3>
@@ -153,16 +153,16 @@ function BirthdayCard({ user }) {
               </p>
             </div>
 
-            <div className="birthday-card__visual relative flex min-h-0 w-full flex-1 flex-col items-stretch justify-center">
-              <div className="birthday-card__photo-wrap mx-auto flex h-[34dvh] min-h-[220px] w-full flex-1 items-center justify-center border-4 border-[#f6f6f6] bg-white p-0 sm:min-h-[280px] md:h-full md:min-h-0">
+            <div className="birthday-card__visual">
+              <div className="birthday-card__photo-wrap">
                 <EmployeeImage
                   user={user}
-                  className="birthday-card__photo h-full w-full object-cover"
+                  className="birthday-card__photo"
                   fallbackClassName="bg-gray-100"
                 />
               </div>
 
-              <div className="birthday-card__name bg-[#c8a15a] text-center md:absolute">
+              <div className="birthday-card__name bg-[#c8a15a] text-center">
                 <h2 className="birthday-card__name-text break-words font-black uppercase leading-tight text-[#1f232b] md:leading-none">
                   {user.employee_name}
                 </h2>
