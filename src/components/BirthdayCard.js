@@ -153,11 +153,11 @@ function BirthdayCard({ user }) {
               </p>
             </div>
 
-            <div className="relative flex min-h-0 w-full flex-1 flex-col items-stretch justify-center md:w-[58%] lg:w-[62%]">
-              <div className="mx-auto flex h-[34dvh] min-h-[220px] w-full flex-1 items-center justify-center border-4 border-[#f6f6f6] bg-white p-0 sm:min-h-[280px] md:h-full md:min-h-0 md:max-w-[92%] lg:max-w-[88%]">
+            <div className="birthday-card__visual relative flex min-h-0 w-full flex-1 flex-col items-stretch justify-center">
+              <div className="birthday-card__photo-wrap mx-auto flex h-[34dvh] min-h-[220px] w-full flex-1 items-center justify-center border-4 border-[#f6f6f6] bg-white p-0 sm:min-h-[280px] md:h-full md:min-h-0">
                 <EmployeeImage
                   user={user}
-                  className="h-full w-full object-cover"
+                  className="birthday-card__photo h-full w-full object-cover"
                   fallbackClassName="bg-gray-100"
                 />
               </div>
