@@ -93,7 +93,7 @@ function EmployeeImage({ user, className, fallbackClassName }) {
 
   if (sourceIndex >= imageSources.length) {
     return (
-      <div className={`flex h-full w-full items-center justify-center ${fallbackClassName}`}>
+      <div className={`birthday-card__fallback ${className} flex items-center justify-center ${fallbackClassName}`}>
         <div className="flex h-36 w-36 items-center justify-center rounded-full bg-[#c8a15a] text-5xl font-bold text-white shadow-lg md:h-48 md:w-48 md:text-6xl">
           {user.employee_name?.trim()?.charAt(0)?.toUpperCase()}
         </div>
