@@ -113,9 +113,9 @@ function EmployeeImage({ user, className, fallbackClassName }) {
 
 function BirthdayCard({ user }) {
   return (
-    <div className="birthday-card relative h-full w-full overflow-y-auto overflow-x-hidden md:overflow-hidden">
+    <div className="birthday-card relative h-screen min-h-screen h-[100dvh] min-h-[100dvh] w-full overflow-y-auto overflow-x-hidden md:overflow-hidden">
       <BalloonBackground className="absolute inset-0 opacity-60" />
-      <div className="birthday-card__frame relative z-10 flex min-h-[100dvh] w-full flex-col border border-white/20 bg-[#ececec]/92 backdrop-blur-[2px] md:h-full">
+      <div className="birthday-card__frame relative z-10 flex h-screen min-h-screen h-[100dvh] min-h-[100dvh] w-full flex-col border border-white/20 bg-[#ececec]/92 backdrop-blur-[2px]">
         <div className="birthday-card__circle absolute hidden rounded-full border-[#cfcfcf] sm:block" />
         <div className="birthday-card__triangle absolute hidden h-0 w-0 border-l-transparent border-r-transparent border-t-[#cfcfcf] sm:block" />
 
@@ -437,7 +437,7 @@ function CelebrationCards({ mode = "auto" }) {
   }, [anniversaryUsers.length, birthdayUsers.length, hasActiveContests, mode, phase]);
 
   if (phase === "loading") {
-    return <div className="h-[100dvh] min-h-[100dvh] w-full bg-[#ececec]" />;
+    return <div className="h-screen min-h-screen h-[100dvh] min-h-[100dvh] w-full bg-[#ececec]" />;
   }
 
   if (phase === "carousel" || activeUsers.length === 0) {
@@ -461,7 +461,7 @@ function CelebrationCards({ mode = "auto" }) {
   }
 
   return (
-    <div className="relative h-[100dvh] min-h-[100dvh] w-full overflow-hidden bg-[#ececec]">
+    <div className="relative h-screen min-h-screen h-[100dvh] min-h-[100dvh] w-full overflow-hidden bg-[#ececec]">
       <div
         className={`relative z-10 flex h-full ${
           isTransitionEnabled ? "transition-transform duration-700 ease-in-out" : ""
