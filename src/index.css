@@ -328,6 +328,18 @@ code {
   font-size: clamp(4rem, 12vw, 9rem);
 }
 
+.quote-template-screen {
+  height: 100vh;
+  min-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  .quote-template-screen {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+}
+
 @media (max-width: 680px) {
   .contest3-hero {
     grid-template-columns: 1fr;

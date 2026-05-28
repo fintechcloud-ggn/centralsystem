@@ -51,7 +51,7 @@ function QuoteCarousel() {
   }
 
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden">
+    <div className="relative h-screen min-h-screen h-[100dvh] min-h-[100dvh] w-full overflow-hidden">
       <div
         className="flex h-full transition-transform duration-700 ease-in-out"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
@@ -59,7 +59,7 @@ function QuoteCarousel() {
         {quotes.map((quote) => (
           <div
             key={quote.id}
-            className="h-[100dvh] w-full flex-shrink-0 overflow-hidden"
+            className="h-screen min-h-screen h-[100dvh] min-h-[100dvh] w-full flex-shrink-0 overflow-hidden"
           >
             <QuoteTemplateRenderer
               templateKey={quote.template_key || "template1"}

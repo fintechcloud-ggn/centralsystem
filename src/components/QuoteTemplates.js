@@ -49,7 +49,7 @@ function QuoteTemplateOne({ quoteText, imageSrc, autoRotate = true }) {
   const displayedImage = imageSrc || DEFAULT_IMAGE;
 
   return (
-    <div className="relative flex h-[100dvh] w-full items-stretch justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_#f7f3ea,_#e6ded0_45%,_#d4cab9_100%)]">
+    <div className="quote-template-screen quote-template-one relative flex h-screen min-h-screen h-[100dvh] min-h-[100dvh] w-full items-stretch justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_#f7f3ea,_#e6ded0_45%,_#d4cab9_100%)]">
       <div className="absolute inset-0 opacity-30">
         <div className="absolute left-[8%] top-[10%] h-32 w-32 rounded-full bg-white blur-3xl sm:h-40 sm:w-40 lg:h-56 lg:w-56" />
         <div className="absolute bottom-[10%] right-[8%] h-40 w-40 rounded-full bg-[#b9985b] blur-3xl sm:h-52 sm:w-52 lg:h-72 lg:w-72" />
@@ -94,7 +94,7 @@ function QuoteTemplateTwo({ quoteText, imageSrc, autoRotate = true }) {
   const displayedImage = imageSrc || DEFAULT_IMAGE;
 
   return (
-    <div className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[linear-gradient(130deg,#10253d_0%,#16395f_48%,#f1c27d_48%,#f6e9cb_100%)] px-4 py-4">
+    <div className="quote-template-screen relative flex h-screen min-h-screen h-[100dvh] min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-[linear-gradient(130deg,#10253d_0%,#16395f_48%,#f1c27d_48%,#f6e9cb_100%)] px-4 py-4">
       <div className="absolute inset-0 opacity-20">
         <div className="absolute -left-20 top-10 h-64 w-64 rounded-full border border-white/50" />
         <div className="absolute bottom-8 right-8 h-40 w-40 rounded-full bg-white/40 blur-2xl" />
@@ -145,7 +145,7 @@ function QuoteTemplateThree({ quoteText, imageSrc, autoRotate = true }) {
   const displayedImage = imageSrc || DEFAULT_IMAGE;
 
   return (
-    <div className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#f2eee5] px-4 py-4">
+    <div className="quote-template-screen relative flex h-screen min-h-screen h-[100dvh] min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#f2eee5] px-4 py-4">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(182,146,92,0.2),transparent_25%),radial-gradient(circle_at_80%_80%,rgba(90,72,54,0.12),transparent_28%)]" />
       <div className="relative z-10 grid h-full w-full max-w-[1700px] items-center gap-5 rounded-[30px] border border-[#d8d0c0] bg-[#fffdf8] p-4 shadow-[0_28px_80px_rgba(69,51,31,0.12)] md:grid-cols-[0.9fr_1.1fr] md:p-7 xl:p-10">
         <div className="flex min-h-0 flex-col justify-center rounded-[28px] bg-[#2c2520] p-4 text-white sm:p-5 md:h-full xl:p-7">
@@ -189,7 +189,7 @@ function QuoteTemplateFour({ quoteText, imageSrc, autoRotate = true }) {
   const displayedImage = imageSrc || DEFAULT_IMAGE;
 
   return (
-    <div className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[linear-gradient(145deg,#efe7d8_0%,#f8f3ea_48%,#ddd2c0_100%)] px-4 py-4">
+    <div className="quote-template-screen relative flex h-screen min-h-screen h-[100dvh] min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-[linear-gradient(145deg,#efe7d8_0%,#f8f3ea_48%,#ddd2c0_100%)] px-4 py-4">
       <div className="absolute inset-0 opacity-50">
         <div className="absolute left-[6%] top-[10%] h-56 w-56 rounded-full bg-white/70 blur-3xl" />
         <div className="absolute bottom-[8%] right-[10%] h-64 w-64 rounded-full bg-[#c3a06a]/30 blur-3xl" />
@@ -238,7 +238,7 @@ function QuoteTemplateFive({ quoteText, imageSrc, autoRotate = true }) {
   const displayedImage = imageSrc || DEFAULT_IMAGE;
 
   return (
-    <div className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#121a26] px-4 py-4">
+    <div className="quote-template-screen relative flex h-screen min-h-screen h-[100dvh] min-h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#121a26] px-4 py-4">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(65,115,181,0.35),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(218,177,106,0.28),transparent_30%)]" />
 
       <div className="relative z-10 grid h-full w-full max-w-[1740px] gap-5 rounded-[34px] border border-white/10 bg-white/5 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.35)] backdrop-blur-md md:grid-cols-[0.88fr_1.12fr] md:p-7 xl:p-10">
