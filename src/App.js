@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import NoSleep from 'nosleep.js';
 import './App.css';
 import BirthdayCard from './components/BirthdayCard';
 import AnniversaryCardPage from './pages/AnniversaryCardPage';
@@ -19,6 +20,7 @@ import { Toaster } from "react-hot-toast";
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 function App() {
   useEffect(() => {
+    const noSleep = new NoSleep();
     let wakeLock = null;
 
     const requestWakeLock = async () => {
@@ -32,7 +34,16 @@ function App() {
       }
     };
 
-    requestWakeLock();
+    const enableNoSleep = () => {
+      noSleep.enable();
+      requestWakeLock();
+      console.log("NoSleep.js and WakeLock enabled on user interaction!");
+      document.removeEventListener('click', enableNoSleep, false);
+      document.removeEventListener('touchstart', enableNoSleep, false);
+    };
+
+    document.addEventListener('click', enableNoSleep, false);
+    document.addEventListener('touchstart', enableNoSleep, false);
 
     const handleVisibilityChange = async () => {
       if (wakeLock !== null && document.visibilityState === 'visible') {
@@ -44,9 +55,12 @@ function App() {
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('click', enableNoSleep, false);
+      document.removeEventListener('touchstart', enableNoSleep, false);
       if (wakeLock !== null) {
         wakeLock.release().catch(console.error);
       }
+      noSleep.disable();
     };
   }, []);
 
