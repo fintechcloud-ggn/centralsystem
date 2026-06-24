@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import NoSleep from 'nosleep.js';
 import './App.css';
 import BirthdayCard from './components/BirthdayCard';
 import AnniversaryCardPage from './pages/AnniversaryCardPage';
@@ -22,62 +21,64 @@ function App() {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    const noSleep = new NoSleep();
-    let wakeLock = null;
+    let keepAliveInterval = null;
 
-    const requestWakeLock = async () => {
-      try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await navigator.wakeLock.request('screen');
-          console.log('Wake Lock is active! TV will stay awake.');
-        }
-      } catch (err) {
-        console.error(`Wake Lock error: ${err.name}, ${err.message}`);
+    // LG WebOS: ensure video is playing (HTML autoplay attr handles initial play,
+    // but we also call .play() in case the attribute alone isn't enough)
+    const ensureVideoPlaying = () => {
+      const video = videoRef.current;
+      if (video && video.paused) {
+        video.play().catch(() => {});
       }
     };
 
-    const enableNoSleep = () => {
-      if (videoRef.current) {
-        videoRef.current.play().catch(e => console.error("Custom video play error:", e));
-      }
-      noSleep.enable();
-      requestWakeLock();
-      console.log("NoSleep.js and WakeLock enabled on user interaction!");
-      document.removeEventListener('click', enableNoSleep, false);
-      document.removeEventListener('touchstart', enableNoSleep, false);
-    };
+    ensureVideoPlaying();
 
-    document.addEventListener('click', enableNoSleep, false);
-    document.addEventListener('touchstart', enableNoSleep, false);
+    // Try Screen Wake Lock API (works on modern Chromium; silently ignored on WebOS)
+    if ('wakeLock' in navigator) {
+      const acquireWakeLock = async () => {
+        try {
+          const lock = await navigator.wakeLock.request('screen');
+          lock.addEventListener('release', () => {
+            if (document.visibilityState === 'visible') acquireWakeLock();
+          });
+        } catch (_) {}
+      };
+      acquireWakeLock();
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') acquireWakeLock();
+      });
+    }
 
-    const handleVisibilityChange = async () => {
-      if (wakeLock !== null && document.visibilityState === 'visible') {
-        await requestWakeLock();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // LG WebOS treats keyboard input as "user activity" — dispatch arrow key events
+    // every 60s to prevent the OS-level screen saver / auto-off from triggering.
+    keepAliveInterval = setInterval(() => {
+      ensureVideoPlaying();
+      // Arrow key down+up (harmless, won't scroll since no focused scrollable element)
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', keyCode: 39, bubbles: true }));
+      document.dispatchEvent(new KeyboardEvent('keyup',   { key: 'ArrowRight', keyCode: 39, bubbles: true }));
+    }, 60000);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      document.removeEventListener('click', enableNoSleep, false);
-      document.removeEventListener('touchstart', enableNoSleep, false);
-      if (wakeLock !== null) {
-        wakeLock.release().catch(console.error);
-      }
-      noSleep.disable();
+      clearInterval(keepAliveInterval);
     };
   }, []);
 
   return (
   <>
+    {/*
+      autoplay + muted + loop = WebOS plays this without user gesture.
+      LG WebOS will not sleep the display while a video is actively playing.
+      4x4 is large enough that WebOS counts it as real media (1x1 sometimes ignored).
+    */}
     <video
       ref={videoRef}
       src="/keep-awake-video.mp4"
+      autoPlay
       loop
       muted
       playsInline
-      style={{ position: 'fixed', zIndex: -9999, opacity: 0.01, width: '1px', height: '1px', pointerEvents: 'none' }}
+      style={{ position: 'fixed', zIndex: -9999, opacity: 0, width: '4px', height: '4px', pointerEvents: 'none' }}
     />
 <Toaster position="top-center" reverseOrder={false} />
   <Routes>
