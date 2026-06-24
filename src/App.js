@@ -22,9 +22,9 @@ function App() {
 
   useEffect(() => {
     let keepAliveInterval = null;
+    let rafId = null;
+    let audioCtx = null;
 
-    // LG WebOS: ensure video is playing (HTML autoplay attr handles initial play,
-    // but we also call .play() in case the attribute alone isn't enough)
     const ensureVideoPlaying = () => {
       const video = videoRef.current;
       if (video && video.paused) {
@@ -34,7 +34,7 @@ function App() {
 
     ensureVideoPlaying();
 
-    // Try Screen Wake Lock API (works on modern Chromium; silently ignored on WebOS)
+    // Screen Wake Lock (modern Chromium; no-op on WebOS)
     if ('wakeLock' in navigator) {
       const acquireWakeLock = async () => {
         try {
@@ -50,17 +50,34 @@ function App() {
       });
     }
 
-    // LG WebOS treats keyboard input as "user activity" — dispatch arrow key events
-    // every 60s to prevent the OS-level screen saver / auto-off from triggering.
+    // Continuous requestAnimationFrame loop — keeps the browser rendering pipeline
+    // active so WebOS doesn't consider the page idle.
+    const rafLoop = () => { rafId = requestAnimationFrame(rafLoop); };
+    rafId = requestAnimationFrame(rafLoop);
+
+    // Silent Web Audio oscillator — signals to the OS that media is active.
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      gain.gain.value = 0; // completely silent
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+    } catch (_) {}
+
+    // Every 30s: keyboard + mouse events so WebOS power manager sees activity.
     keepAliveInterval = setInterval(() => {
       ensureVideoPlaying();
-      // Arrow key down+up (harmless, won't scroll since no focused scrollable element)
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', keyCode: 39, bubbles: true }));
       document.dispatchEvent(new KeyboardEvent('keyup',   { key: 'ArrowRight', keyCode: 39, bubbles: true }));
-    }, 60000);
+      document.dispatchEvent(new MouseEvent('mousemove',  { bubbles: true, clientX: 1, clientY: 1 }));
+    }, 30000);
 
     return () => {
       clearInterval(keepAliveInterval);
+      cancelAnimationFrame(rafId);
+      audioCtx?.close();
     };
   }, []);
 
@@ -78,7 +95,7 @@ function App() {
       loop
       muted
       playsInline
-      style={{ position: 'fixed', zIndex: -9999, opacity: 0, width: '4px', height: '4px', pointerEvents: 'none' }}
+      style={{ position: 'fixed', zIndex: -9999, opacity: 0.01, width: '4px', height: '4px', pointerEvents: 'none' }}
     />
 <Toaster position="top-center" reverseOrder={false} />
   <Routes>
