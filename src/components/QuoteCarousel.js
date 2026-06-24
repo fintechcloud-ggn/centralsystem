@@ -2,12 +2,51 @@ import React, { useEffect, useState } from "react";
 import NoEventsPage from "./NoEventsPage";
 import QuoteTemplateRenderer from "./QuoteTemplates";
 import { apiUrl } from "../lib/api";
+import NoSleep from "nosleep.js";
 
 const QUOTE_SLIDE_DURATION_MS = 30000;
 
 function QuoteCarousel() {
   const [quotes, setQuotes] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const noSleep = new NoSleep();
+
+    const enableNoSleep = () => {
+      noSleep.enable();
+      document.removeEventListener("click", enableNoSleep);
+      document.removeEventListener("touchstart", enableNoSleep);
+      document.removeEventListener("keydown", enableNoSleep);
+    };
+
+    noSleep.enable();
+    document.addEventListener("click", enableNoSleep);
+    document.addEventListener("touchstart", enableNoSleep);
+    document.addEventListener("keydown", enableNoSleep);
+
+    let wakeLock = null;
+    const requestWakeLock = async () => {
+      try {
+        if ("wakeLock" in navigator) {
+          wakeLock = await navigator.wakeLock.request("screen");
+        }
+      } catch (err) {
+        console.error("Wake Lock error:", err);
+      }
+    };
+    requestWakeLock();
+
+    return () => {
+      noSleep.disable();
+      document.removeEventListener("click", enableNoSleep);
+      document.removeEventListener("touchstart", enableNoSleep);
+      document.removeEventListener("keydown", enableNoSleep);
+      if (wakeLock !== null) {
+        wakeLock.release().catch(() => {});
+      }
+    };
+  }, []);
 
   useEffect(() => {
     fetch(apiUrl("/api/quotes"))

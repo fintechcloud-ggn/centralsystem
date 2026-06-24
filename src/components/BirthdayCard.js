@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Carousel from "./Carousel";
 import BalloonBackground from "./ui/demo";
 import { apiUrl } from "../lib/api";
+import NoSleep from "nosleep.js";
 
 const CARD_DURATION_MS = 30000;
 const SLIDE_TRANSITION_MS = 700;
@@ -290,6 +291,44 @@ function CelebrationCards({ mode = "auto" }) {
   const [phase, setPhase] = useState("loading");
   const [isTransitionEnabled, setIsTransitionEnabled] = useState(false);
   const [hasActiveContests, setHasActiveContests] = useState(false);
+
+  useEffect(() => {
+    const noSleep = new NoSleep();
+
+    const enableNoSleep = () => {
+      noSleep.enable();
+      document.removeEventListener("click", enableNoSleep);
+      document.removeEventListener("touchstart", enableNoSleep);
+      document.removeEventListener("keydown", enableNoSleep);
+    };
+
+    noSleep.enable();
+    document.addEventListener("click", enableNoSleep);
+    document.addEventListener("touchstart", enableNoSleep);
+    document.addEventListener("keydown", enableNoSleep);
+
+    let wakeLock = null;
+    const requestWakeLock = async () => {
+      try {
+        if ("wakeLock" in navigator) {
+          wakeLock = await navigator.wakeLock.request("screen");
+        }
+      } catch (err) {
+        console.error("Wake Lock error:", err);
+      }
+    };
+    requestWakeLock();
+
+    return () => {
+      noSleep.disable();
+      document.removeEventListener("click", enableNoSleep);
+      document.removeEventListener("touchstart", enableNoSleep);
+      document.removeEventListener("keydown", enableNoSleep);
+      if (wakeLock !== null) {
+        wakeLock.release().catch(() => {});
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const fetchEmployees = async () => {
