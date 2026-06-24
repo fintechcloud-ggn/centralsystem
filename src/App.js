@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import NoSleep from 'nosleep.js';
 import './App.css';
 import BirthdayCard from './components/BirthdayCard';
@@ -19,6 +19,8 @@ import ActivityLogs from './pages/ActivityLogs';
 import { Toaster } from "react-hot-toast";
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 function App() {
+  const videoRef = useRef(null);
+
   useEffect(() => {
     const noSleep = new NoSleep();
     let wakeLock = null;
@@ -35,6 +37,9 @@ function App() {
     };
 
     const enableNoSleep = () => {
+      if (videoRef.current) {
+        videoRef.current.play().catch(e => console.error("Custom video play error:", e));
+      }
       noSleep.enable();
       requestWakeLock();
       console.log("NoSleep.js and WakeLock enabled on user interaction!");
@@ -66,6 +71,14 @@ function App() {
 
   return (
   <>
+    <video
+      ref={videoRef}
+      src="/keep-awake-video.mp4"
+      loop
+      muted
+      playsInline
+      style={{ position: 'fixed', zIndex: -9999, opacity: 0.01, width: '1px', height: '1px', pointerEvents: 'none' }}
+    />
 <Toaster position="top-center" reverseOrder={false} />
   <Routes>
      <Route path="/" element={<BirthdayCard/>}/>
