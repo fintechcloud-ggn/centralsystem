@@ -60,19 +60,34 @@ function App() {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      gain.gain.value = 0; // completely silent
+      gain.gain.value = 0;
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start();
     } catch (_) {}
 
-    // Every 30s: keyboard + mouse events so WebOS power manager sees activity.
+    // LG WebOS: PalmServiceBridge is a native API available in the WebOS browser.
+    // Calling setDisplayOn every 20s directly prevents the display from sleeping.
+    let webosBridge = null;
+    try {
+      if (typeof window.PalmServiceBridge !== 'undefined') {
+        webosBridge = new window.PalmServiceBridge();
+      }
+    } catch (_) {}
+
+    // Every 20s: call WebOS power service + dispatch input events as fallback.
     keepAliveInterval = setInterval(() => {
       ensureVideoPlaying();
+      // Try WebOS native display-on call
+      if (webosBridge) {
+        try { webosBridge.call('luna://com.webos.service.tvpower/power/turnOn', '{}'); } catch (_) {}
+        try { webosBridge.call('luna://com.webos.service.power2/setDisplayOn', '{}'); } catch (_) {}
+      }
+      // Fallback: input events
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', keyCode: 39, bubbles: true }));
       document.dispatchEvent(new KeyboardEvent('keyup',   { key: 'ArrowRight', keyCode: 39, bubbles: true }));
       document.dispatchEvent(new MouseEvent('mousemove',  { bubbles: true, clientX: 1, clientY: 1 }));
-    }, 30000);
+    }, 20000);
 
     return () => {
       clearInterval(keepAliveInterval);
@@ -95,7 +110,7 @@ function App() {
       loop
       muted
       playsInline
-      style={{ position: 'fixed', zIndex: -9999, opacity: 0.01, width: '4px', height: '4px', pointerEvents: 'none' }}
+      style={{ position: 'fixed', zIndex: -9999, opacity: 0.01, width: '32px', height: '32px', pointerEvents: 'none' }}
     />
 <Toaster position="top-center" reverseOrder={false} />
   <Routes>
