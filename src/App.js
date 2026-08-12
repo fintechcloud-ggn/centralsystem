@@ -21,87 +21,71 @@ function App() {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    let keepAliveInterval = null;
-    let rafId = null;
-    let audioCtx = null;
+    // The only browser-side lever that actually reaches a TV's power manager is
+    // real, continuous media playback. Synthetic key/mouse events, zero-gain
+    // AudioContext oscillators and requestAnimationFrame loops do not — they
+    // never leave the page sandbox, so they were removed. PalmServiceBridge is
+    // likewise unavailable to browser pages (privileged webOS apps only).
+    //
+    // Anything beyond this has to be done in the TV's own settings:
+    // Auto Power Off, Power Off after No Signal, Energy Saving, and Store Mode.
+    let watchdog = null;
+    let wakeLock = null;
+    let released = false;
 
+    // Keep the decoder running. If the element stalled or the TV suspended it,
+    // reload the source before retrying so play() has something to resume from.
     const ensureVideoPlaying = () => {
       const video = videoRef.current;
-      if (video && video.paused) {
+      if (!video) return;
+      if (video.error || video.readyState < 2) {
+        try { video.load(); } catch (_) {}
+      }
+      if (video.paused || video.ended) {
         video.play().catch(() => {});
       }
     };
 
-    ensureVideoPlaying();
+    // Works on newer WebOS builds (Chromium 84+); harmless no-op on older ones.
+    const acquireWakeLock = async () => {
+      if (!('wakeLock' in navigator) || released) return;
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => {
+          if (!released && document.visibilityState === 'visible') acquireWakeLock();
+        });
+      } catch (_) {}
+    };
 
-    // Screen Wake Lock (modern Chromium; no-op on WebOS)
-    if ('wakeLock' in navigator) {
-      const acquireWakeLock = async () => {
-        try {
-          const lock = await navigator.wakeLock.request('screen');
-          lock.addEventListener('release', () => {
-            if (document.visibilityState === 'visible') acquireWakeLock();
-          });
-        } catch (_) {}
-      };
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') return;
       acquireWakeLock();
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') acquireWakeLock();
-      });
-    }
-
-    // Continuous requestAnimationFrame loop — keeps the browser rendering pipeline
-    // active so WebOS doesn't consider the page idle.
-    const rafLoop = () => { rafId = requestAnimationFrame(rafLoop); };
-    rafId = requestAnimationFrame(rafLoop);
-
-    // Silent Web Audio oscillator — signals to the OS that media is active.
-    try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      gain.gain.value = 0;
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-    } catch (_) {}
-
-    // LG WebOS: PalmServiceBridge is a native API available in the WebOS browser.
-    // Calling setDisplayOn every 20s directly prevents the display from sleeping.
-    let webosBridge = null;
-    try {
-      if (typeof window.PalmServiceBridge !== 'undefined') {
-        webosBridge = new window.PalmServiceBridge();
-      }
-    } catch (_) {}
-
-    // Every 20s: call WebOS power service + dispatch input events as fallback.
-    keepAliveInterval = setInterval(() => {
       ensureVideoPlaying();
-      // Try WebOS native display-on call
-      if (webosBridge) {
-        try { webosBridge.call('luna://com.webos.service.tvpower/power/turnOn', '{}'); } catch (_) {}
-        try { webosBridge.call('luna://com.webos.service.power2/setDisplayOn', '{}'); } catch (_) {}
-      }
-      // Fallback: input events
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', keyCode: 39, bubbles: true }));
-      document.dispatchEvent(new KeyboardEvent('keyup',   { key: 'ArrowRight', keyCode: 39, bubbles: true }));
-      document.dispatchEvent(new MouseEvent('mousemove',  { bubbles: true, clientX: 1, clientY: 1 }));
-    }, 20000);
+    };
+
+    ensureVideoPlaying();
+    acquireWakeLock();
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    watchdog = setInterval(ensureVideoPlaying, 10000);
 
     return () => {
-      clearInterval(keepAliveInterval);
-      cancelAnimationFrame(rafId);
-      audioCtx?.close();
+      released = true;
+      clearInterval(watchdog);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      wakeLock?.release().catch(() => {});
     };
   }, []);
 
   return (
   <>
     {/*
-      autoplay + muted + loop = WebOS plays this without user gesture.
-      LG WebOS will not sleep the display while a video is actively playing.
-      4x4 is large enough that WebOS counts it as real media (1x1 sometimes ignored).
+      autoplay + muted + loop = WebOS starts this without a user gesture.
+      It must stay full-size and composited: a 32px, near-transparent element
+      gets treated as decorative and does not hold the display awake. Sitting at
+      zIndex -1 behind the opaque page content keeps it invisible while the
+      decoder stays genuinely active, which is what the TV's power manager sees.
+      Do not use display:none, visibility:hidden or opacity:0 here — each one
+      lets the browser drop the decoder and the whole thing stops working.
     */}
     <video
       ref={videoRef}
@@ -110,7 +94,20 @@ function App() {
       loop
       muted
       playsInline
-      style={{ position: 'fixed', zIndex: -9999, opacity: 0.01, width: '32px', height: '32px', pointerEvents: 'none' }}
+      preload="auto"
+      aria-hidden="true"
+      tabIndex={-1}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        objectFit: 'cover',
+        zIndex: -1,
+        opacity: 0.02,
+        pointerEvents: 'none',
+      }}
     />
 <Toaster position="top-center" reverseOrder={false} />
   <Routes>
