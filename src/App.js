@@ -87,7 +87,7 @@ function App() {
       Do not use display:none, visibility:hidden or opacity:0 here — each one
       lets the browser drop the decoder and the whole thing stops working.
     */}
-    <video
+    {/* <video
       ref={videoRef}
       src="/keep-awake-video.mp4"
       autoPlay
@@ -108,7 +108,7 @@ function App() {
         opacity: 0.02,
         pointerEvents: 'none',
       }}
-    />
+    /> */}
 <Toaster position="top-center" reverseOrder={false} />
   <Routes>
      <Route path="/" element={<BirthdayCard/>}/>
