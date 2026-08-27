@@ -29,6 +29,7 @@ export default function Contest4({ previewData }) {
           ))}
         </div>
         <p className="mt-8 text-sm font-semibold uppercase tracking-[0.2em] text-white/70">
+          {/* Ends {formatContestDate(previewData?.ends_on) || "Soon"} */}
           Ends {formatContestDate(previewData?.ends_on) || "Soon"}
         </p>
       </div>
