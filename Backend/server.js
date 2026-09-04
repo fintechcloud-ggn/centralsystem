@@ -46,56 +46,70 @@ app.use(express.json({ limit: "10mb" }));
 // Real-time Video Call Signaling State
 let activeCallState = {
   isCallActive: false,
-  adminSocketId: null,
-  offer: null
+  adminSocketId: null
 };
 
 io.on("connection", (socket) => {
   // Send initial call status to client upon connection
   socket.emit("call:status", {
-    isCallActive: activeCallState.isCallActive,
-    offer: activeCallState.offer
+    isCallActive: activeCallState.isCallActive
   });
 
-  socket.on("admin:start_call", (data) => {
+  socket.on("admin:start_call", () => {
     activeCallState.isCallActive = true;
     activeCallState.adminSocketId = socket.id;
-    activeCallState.offer = data?.offer || null;
-    io.emit("call:started", {
-      offer: activeCallState.offer,
-      adminSocketId: socket.id
+    io.emit("call:started", { adminSocketId: socket.id });
+  });
+
+  socket.on("viewer:join", () => {
+    if (activeCallState.isCallActive && activeCallState.adminSocketId) {
+      io.to(activeCallState.adminSocketId).emit("viewer:joined", {
+        viewerSocketId: socket.id
+      });
+    }
+  });
+
+  socket.on("webrtc:offer", ({ viewerSocketId, offer }) => {
+    io.to(viewerSocketId).emit("webrtc:offer", {
+      adminSocketId: socket.id,
+      offer
     });
+  });
+
+  socket.on("webrtc:answer", ({ adminSocketId, answer }) => {
+    const targetAdmin = adminSocketId || activeCallState.adminSocketId;
+    if (targetAdmin) {
+      io.to(targetAdmin).emit("webrtc:answer", {
+        viewerSocketId: socket.id,
+        answer
+      });
+    }
+  });
+
+  socket.on("webrtc:ice_candidate", ({ targetSocketId, candidate }) => {
+    if (targetSocketId) {
+      io.to(targetSocketId).emit("webrtc:ice_candidate", {
+        fromSocketId: socket.id,
+        candidate
+      });
+    } else {
+      socket.broadcast.emit("webrtc:ice_candidate", {
+        fromSocketId: socket.id,
+        candidate
+      });
+    }
   });
 
   socket.on("admin:end_call", () => {
     activeCallState.isCallActive = false;
     activeCallState.adminSocketId = null;
-    activeCallState.offer = null;
     io.emit("call:ended");
-  });
-
-  socket.on("webrtc:offer", (data) => {
-    activeCallState.offer = data?.offer;
-    socket.broadcast.emit("webrtc:offer", data);
-  });
-
-  socket.on("webrtc:answer", (data) => {
-    if (activeCallState.adminSocketId) {
-      io.to(activeCallState.adminSocketId).emit("webrtc:answer", data);
-    } else {
-      socket.broadcast.emit("webrtc:answer", data);
-    }
-  });
-
-  socket.on("webrtc:ice_candidate", (data) => {
-    socket.broadcast.emit("webrtc:ice_candidate", data);
   });
 
   socket.on("disconnect", () => {
     if (socket.id === activeCallState.adminSocketId) {
       activeCallState.isCallActive = false;
       activeCallState.adminSocketId = null;
-      activeCallState.offer = null;
       io.emit("call:ended");
     }
   });

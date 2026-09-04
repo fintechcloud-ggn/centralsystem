@@ -440,29 +440,20 @@ function CelebrationCards({ mode = "auto" }) {
   }, [anniversaryUsers.length, birthdayUsers.length, hasActiveContests, mode, phase]);
 
   const [isCallActive, setIsCallActive] = useState(false);
-  const [callOffer, setCallOffer] = useState(null);
 
   useEffect(() => {
     const socket = getSocket();
 
     const handleCallStatus = (data) => {
-      if (data?.isCallActive) {
-        setIsCallActive(true);
-        setCallOffer(data.offer);
-      } else {
-        setIsCallActive(false);
-        setCallOffer(null);
-      }
+      setIsCallActive(!!data?.isCallActive);
     };
 
-    const handleCallStarted = (data) => {
+    const handleCallStarted = () => {
       setIsCallActive(true);
-      setCallOffer(data?.offer || null);
     };
 
     const handleCallEnded = () => {
       setIsCallActive(false);
-      setCallOffer(null);
     };
 
     socket.on("call:status", handleCallStatus);
@@ -479,7 +470,6 @@ function CelebrationCards({ mode = "auto" }) {
   if (isCallActive) {
     return (
       <VideoCallDisplay
-        initialOffer={callOffer}
         onCallEnded={() => setIsCallActive(false)}
       />
     );

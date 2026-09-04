@@ -3,7 +3,7 @@ import { getSocket } from "../lib/socket";
 
 export default function AdminVideoCallModal({ isOpen, onClose }) {
   const localVideoRef = useRef(null);
-  const pcRef = useRef(null);
+  const peerConnectionsRef = useRef({}); // Store peer connections mapped by viewerSocketId
   const streamRef = useRef(null);
 
   const [isBroadcasting, setIsBroadcasting] = useState(false);
@@ -11,27 +11,17 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
   const [cameraEnabled, setCameraEnabled] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
+  const configuration = {
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" }
+    ]
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
-    const socket = getSocket();
-    const configuration = {
-      iceServers: [
-        { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" }
-      ]
-    };
-
-    const pc = new RTCPeerConnection(configuration);
-    pcRef.current = pc;
-
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        socket.emit("webrtc:ice_candidate", { candidate: event.candidate });
-      }
-    };
-
-    // Get User Media (Camera & Mic)
+    // Request Camera & Microphone Access
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
@@ -39,42 +29,90 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
         }
-        stream.getTracks().forEach((track) => pc.addTrack(track, stream));
       })
       .catch((err) => {
         console.error("Camera access error:", err);
         setErrorMsg("Unable to access camera or microphone. Please check permissions.");
       });
 
-    const handleAnswer = async (data) => {
-      try {
-        if (data?.answer && pc.signalingState !== "stable") {
-          await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-        }
-      } catch (err) {
-        console.error("Error setting remote description on admin:", err);
+    return () => {
+      stopMediaTracks();
+      closeAllConnections();
+    };
+  }, [isOpen]);
+
+  const createPeerConnectionForViewer = async (viewerSocketId) => {
+    const socket = getSocket();
+    if (!streamRef.current || !socket) return;
+
+    const pc = new RTCPeerConnection(configuration);
+    peerConnectionsRef.current[viewerSocketId] = pc;
+
+    // Add Admin's video/audio tracks
+    streamRef.current.getTracks().forEach((track) => {
+      pc.addTrack(track, streamRef.current);
+    });
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit("webrtc:ice_candidate", {
+          targetSocketId: viewerSocketId,
+          candidate: event.candidate
+        });
       }
     };
 
-    const handleIceCandidate = async (data) => {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    socket.emit("webrtc:offer", {
+      viewerSocketId,
+      offer
+    });
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const socket = getSocket();
+
+    const handleViewerJoined = ({ viewerSocketId }) => {
+      if (viewerSocketId) {
+        createPeerConnectionForViewer(viewerSocketId);
+      }
+    };
+
+    const handleAnswer = async ({ viewerSocketId, answer }) => {
       try {
-        if (data?.candidate && pc.remoteDescription) {
-          await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        const pc = peerConnectionsRef.current[viewerSocketId];
+        if (pc && pc.signalingState !== "stable") {
+          await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        }
+      } catch (err) {
+        console.error("Error setting answer on admin:", err);
+      }
+    };
+
+    const handleIceCandidate = async ({ fromSocketId, candidate }) => {
+      try {
+        const pc = peerConnectionsRef.current[fromSocketId];
+        if (pc && pc.remoteDescription && candidate) {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
         }
       } catch (err) {
         console.error("Error adding candidate on admin:", err);
       }
     };
 
+    socket.on("viewer:joined", handleViewerJoined);
     socket.on("webrtc:answer", handleAnswer);
     socket.on("webrtc:ice_candidate", handleIceCandidate);
 
     return () => {
+      socket.off("viewer:joined", handleViewerJoined);
       socket.off("webrtc:answer", handleAnswer);
       socket.off("webrtc:ice_candidate", handleIceCandidate);
-      stopMediaTracks();
-      pc.close();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const stopMediaTracks = () => {
@@ -84,20 +122,17 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
     }
   };
 
-  const startBroadcast = async () => {
-    try {
-      const pc = pcRef.current;
-      const socket = getSocket();
-      if (!pc || !socket) return;
+  const closeAllConnections = () => {
+    Object.values(peerConnectionsRef.current).forEach((pc) => pc?.close());
+    peerConnectionsRef.current = {};
+  };
 
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      socket.emit("admin:start_call", { offer });
-      setIsBroadcasting(true);
-    } catch (err) {
-      console.error("Failed to start broadcast:", err);
-      setErrorMsg("Failed to start live broadcast.");
-    }
+  const startBroadcast = () => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    socket.emit("admin:start_call");
+    setIsBroadcasting(true);
   };
 
   const endBroadcast = () => {
@@ -107,9 +142,7 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
     }
     setIsBroadcasting(false);
     stopMediaTracks();
-    if (pcRef.current) {
-      pcRef.current.close();
-    }
+    closeAllConnections();
     onClose();
   };
 
@@ -175,7 +208,7 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
           )}
         </div>
 
-        {/* Controls & Action Buttons */}
+        {/* Controls */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 p-6">
           <div className="flex items-center gap-3">
             <button
