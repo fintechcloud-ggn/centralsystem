@@ -28,9 +28,78 @@ if (!envLoaded) {
   dotenv.config();
 }
 
+const http = require("http");
+const { Server } = require("socket.io");
+
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
+
+// Real-time Video Call Signaling State
+let activeCallState = {
+  isCallActive: false,
+  adminSocketId: null,
+  offer: null
+};
+
+io.on("connection", (socket) => {
+  // Send initial call status to client upon connection
+  socket.emit("call:status", {
+    isCallActive: activeCallState.isCallActive,
+    offer: activeCallState.offer
+  });
+
+  socket.on("admin:start_call", (data) => {
+    activeCallState.isCallActive = true;
+    activeCallState.adminSocketId = socket.id;
+    activeCallState.offer = data?.offer || null;
+    io.emit("call:started", {
+      offer: activeCallState.offer,
+      adminSocketId: socket.id
+    });
+  });
+
+  socket.on("admin:end_call", () => {
+    activeCallState.isCallActive = false;
+    activeCallState.adminSocketId = null;
+    activeCallState.offer = null;
+    io.emit("call:ended");
+  });
+
+  socket.on("webrtc:offer", (data) => {
+    activeCallState.offer = data?.offer;
+    socket.broadcast.emit("webrtc:offer", data);
+  });
+
+  socket.on("webrtc:answer", (data) => {
+    if (activeCallState.adminSocketId) {
+      io.to(activeCallState.adminSocketId).emit("webrtc:answer", data);
+    } else {
+      socket.broadcast.emit("webrtc:answer", data);
+    }
+  });
+
+  socket.on("webrtc:ice_candidate", (data) => {
+    socket.broadcast.emit("webrtc:ice_candidate", data);
+  });
+
+  socket.on("disconnect", () => {
+    if (socket.id === activeCallState.adminSocketId) {
+      activeCallState.isCallActive = false;
+      activeCallState.adminSocketId = null;
+      activeCallState.offer = null;
+      io.emit("call:ended");
+    }
+  });
+});
 
 const requiredEnvVars = [
   "DB_HOST",
@@ -1947,8 +2016,8 @@ if (require.main === module) {
   initializeApp({ runMigrations: true })
     .then(() => {
       startActivityLogCleanupSchedule();
-      app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
+      server.listen(PORT, () => {
+        console.log(`Server & Socket.io running on port ${PORT}`);
       });
     })
     .catch((error) => {
@@ -1957,4 +2026,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { app, initializeApp };
+module.exports = { app, server, initializeApp };

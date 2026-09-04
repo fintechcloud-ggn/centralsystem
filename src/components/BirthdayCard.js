@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import Carousel from "./Carousel";
 import BalloonBackground from "./ui/demo";
 import { apiUrl } from "../lib/api";
+import VideoCallDisplay from "./VideoCallDisplay";
+import { getSocket } from "../lib/socket";
 
 const CARD_DURATION_MS = 30000;
 const SLIDE_TRANSITION_MS = 700;
@@ -436,6 +438,52 @@ function CelebrationCards({ mode = "auto" }) {
 
     return undefined;
   }, [anniversaryUsers.length, birthdayUsers.length, hasActiveContests, mode, phase]);
+
+  const [isCallActive, setIsCallActive] = useState(false);
+  const [callOffer, setCallOffer] = useState(null);
+
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleCallStatus = (data) => {
+      if (data?.isCallActive) {
+        setIsCallActive(true);
+        setCallOffer(data.offer);
+      } else {
+        setIsCallActive(false);
+        setCallOffer(null);
+      }
+    };
+
+    const handleCallStarted = (data) => {
+      setIsCallActive(true);
+      setCallOffer(data?.offer || null);
+    };
+
+    const handleCallEnded = () => {
+      setIsCallActive(false);
+      setCallOffer(null);
+    };
+
+    socket.on("call:status", handleCallStatus);
+    socket.on("call:started", handleCallStarted);
+    socket.on("call:ended", handleCallEnded);
+
+    return () => {
+      socket.off("call:status", handleCallStatus);
+      socket.off("call:started", handleCallStarted);
+      socket.off("call:ended", handleCallEnded);
+    };
+  }, []);
+
+  if (isCallActive) {
+    return (
+      <VideoCallDisplay
+        initialOffer={callOffer}
+        onCallEnded={() => setIsCallActive(false)}
+      />
+    );
+  }
 
   if (phase === "loading") {
     return <div className="h-screen min-h-screen h-[100dvh] min-h-[100dvh] w-full bg-[#ececec]" />;
