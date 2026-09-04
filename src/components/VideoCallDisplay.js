@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { getSocket } from "../lib/socket";
+import { apiUrl } from "../lib/api";
 
 export default function VideoCallDisplay({ onCallEnded }) {
   const videoRef = useRef(null);
   const pcRef = useRef(null);
   const [streamConnected, setStreamConnected] = useState(false);
-  const [isMuted, setIsMuted] = useState(true); // Default muted to ensure 100% Chrome autoplay
+  const [isMuted, setIsMuted] = useState(true);
 
   useEffect(() => {
     const socket = getSocket();
@@ -23,8 +24,6 @@ export default function VideoCallDisplay({ onCallEnded }) {
       if (videoRef.current && event.streams[0]) {
         videoRef.current.srcObject = event.streams[0];
         setStreamConnected(true);
-
-        // Attempt playback (muted by default so Chrome/WebOS never blocks autoplay)
         videoRef.current
           .play()
           .catch((err) => console.warn("Video play error:", err));
@@ -33,52 +32,83 @@ export default function VideoCallDisplay({ onCallEnded }) {
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        socket.emit("webrtc:ice_candidate", {
-          candidate: event.candidate
-        });
+        if (socket) socket.emit("webrtc:ice_candidate", { candidate: event.candidate });
+
+        fetch(apiUrl("/api/live-call/signal"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "viewer_ice", payload: event.candidate })
+        }).catch(() => {});
       }
     };
 
-    const handleOffer = async ({ adminSocketId, offer }) => {
+    const setupStreamFromOffer = async (offerStr) => {
       try {
-        if (!offer) return;
-        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        if (!offerStr || pc.remoteDescription) return;
+        const offerObj = typeof offerStr === "string" ? JSON.parse(offerStr) : offerStr;
+
+        await pc.setRemoteDescription(new RTCSessionDescription(offerObj));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        socket.emit("webrtc:answer", {
-          adminSocketId,
-          answer
-        });
+
+        const answerData = JSON.stringify(answer);
+
+        if (socket) socket.emit("webrtc:answer", { answer: answerData });
+
+        fetch(apiUrl("/api/live-call/signal"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "answer", payload: answerData })
+        }).catch(() => {});
       } catch (err) {
-        console.error("Error handling offer in VideoCallDisplay:", err);
+        console.error("Error setting up stream from offer:", err);
       }
     };
 
-    const handleIceCandidate = async ({ candidate }) => {
-      try {
-        if (candidate && pc.remoteDescription) {
-          await pc.addIceCandidate(new RTCIceCandidate(candidate));
-        }
-      } catch (err) {
-        console.error("Error adding ice candidate in viewer:", err);
-      }
+    // Socket Handlers
+    const handleSocketOffer = ({ offer }) => {
+      setupStreamFromOffer(offer);
     };
 
     const handleCallEnded = () => {
       if (onCallEnded) onCallEnded();
     };
 
-    socket.on("webrtc:offer", handleOffer);
-    socket.on("webrtc:ice_candidate", handleIceCandidate);
+    socket.on("webrtc:offer", handleSocketOffer);
     socket.on("call:ended", handleCallEnded);
 
-    // Notify backend that a viewer display has mounted and is ready to receive stream
-    socket.emit("viewer:join");
+    // Initial Fetch & Polling for signals over HTTP
+    const pollSignals = async () => {
+      try {
+        const res = await fetch(apiUrl("/api/live-call/signals"));
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (data?.offer && !pc.remoteDescription) {
+          await setupStreamFromOffer(data.offer);
+        }
+
+        if (data?.adminIceCandidates && Array.isArray(data.adminIceCandidates)) {
+          for (const cand of data.adminIceCandidates) {
+            try {
+              if (pc.remoteDescription && cand) {
+                await pc.addIceCandidate(new RTCIceCandidate(cand));
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (err) {
+        console.error("Error polling signals in display:", err);
+      }
+    };
+
+    pollSignals();
+    const interval = setInterval(pollSignals, 1000);
 
     return () => {
-      socket.off("webrtc:offer", handleOffer);
-      socket.off("webrtc:ice_candidate", handleIceCandidate);
+      socket.off("webrtc:offer", handleSocketOffer);
       socket.off("call:ended", handleCallEnded);
+      clearInterval(interval);
       pc.close();
     };
   }, [onCallEnded]);

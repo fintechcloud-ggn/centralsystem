@@ -48,8 +48,32 @@ let activeCallState = {
   isCallActive: false,
   adminSocketId: null,
   offer: null,
-  answers: {},
-  iceCandidates: []
+  answer: null,
+  adminIceCandidates: [],
+  viewerIceCandidates: []
+};
+
+const handleLiveCallSignal = async (req, res) => {
+  const { type, payload } = req.body || {};
+  if (type === "offer") {
+    activeCallState.offer = typeof payload === "object" ? JSON.stringify(payload) : payload;
+  } else if (type === "answer") {
+    activeCallState.answer = typeof payload === "object" ? JSON.stringify(payload) : (payload?.answer || payload);
+  } else if (type === "admin_ice" && payload) {
+    activeCallState.adminIceCandidates.push(payload);
+  } else if (type === "viewer_ice" && payload) {
+    activeCallState.viewerIceCandidates.push(payload);
+  }
+  res.json({ success: true });
+};
+
+const handleLiveCallSignals = async (req, res) => {
+  res.json({
+    offer: activeCallState.offer,
+    answer: activeCallState.answer,
+    adminIceCandidates: activeCallState.adminIceCandidates,
+    viewerIceCandidates: activeCallState.viewerIceCandidates
+  });
 };
 
 // REST API Endpoints for Live Call (MySQL Database & Serverless persistent state)

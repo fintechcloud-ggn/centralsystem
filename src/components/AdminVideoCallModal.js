@@ -4,7 +4,7 @@ import { apiUrl } from "../lib/api";
 
 export default function AdminVideoCallModal({ isOpen, onClose }) {
   const localVideoRef = useRef(null);
-  const peerConnectionsRef = useRef({}); // Store peer connections mapped by viewerSocketId
+  const pcRef = useRef(null);
   const streamRef = useRef(null);
 
   const [isBroadcasting, setIsBroadcasting] = useState(false);
@@ -22,7 +22,7 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
   useEffect(() => {
     if (!isOpen) return;
 
-    // Request Camera & Microphone Access
+    // Get User Media (Camera & Mic)
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
@@ -38,115 +38,118 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
 
     return () => {
       stopMediaTracks();
-      closeAllConnections();
+      if (pcRef.current) pcRef.current.close();
     };
   }, [isOpen]);
 
-  const createPeerConnectionForViewer = async (viewerSocketId) => {
-    const socket = getSocket();
-    if (!streamRef.current || !socket) return;
+  // Polling for viewer WebRTC answer and ICE candidates over REST API (Vercel Serverless Compatible)
+  useEffect(() => {
+    if (!isOpen || !isBroadcasting) return;
 
-    const pc = new RTCPeerConnection(configuration);
-    peerConnectionsRef.current[viewerSocketId] = pc;
+    const checkSignals = async () => {
+      try {
+        const pc = pcRef.current;
+        if (!pc) return;
 
-    // Add Admin's video/audio tracks
-    streamRef.current.getTracks().forEach((track) => {
-      pc.addTrack(track, streamRef.current);
-    });
+        const res = await fetch(apiUrl("/api/live-call/signals"));
+        if (!res.ok) return;
 
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        socket.emit("webrtc:ice_candidate", {
-          targetSocketId: viewerSocketId,
-          candidate: event.candidate
-        });
+        const data = await res.json();
+
+        // If viewer answer received and not yet set
+        if (data?.answer && pc.signalingState === "have-local-offer") {
+          const answerObj = typeof data.answer === "string" ? JSON.parse(data.answer) : data.answer;
+          await pc.setRemoteDescription(new RTCSessionDescription(answerObj));
+        }
+
+        // Add viewer ICE candidates
+        if (data?.viewerIceCandidates && Array.isArray(data.viewerIceCandidates)) {
+          for (const cand of data.viewerIceCandidates) {
+            try {
+              if (pc.remoteDescription && cand) {
+                await pc.addIceCandidate(new RTCIceCandidate(cand));
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (err) {
+        console.error("Error polling signals on admin:", err);
       }
     };
 
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
+    const interval = setInterval(checkSignals, 1000);
+    return () => clearInterval(interval);
+  }, [isOpen, isBroadcasting]);
 
-    socket.emit("webrtc:offer", {
-      viewerSocketId,
-      offer
-    });
+  const startBroadcast = async () => {
+    try {
+      if (!streamRef.current) return;
+
+      const pc = new RTCPeerConnection(configuration);
+      pcRef.current = pc;
+
+      // Add local video/audio tracks
+      streamRef.current.getTracks().forEach((track) => {
+        pc.addTrack(track, streamRef.current);
+      });
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          // Relay ICE candidate via Socket and REST API
+          const socket = getSocket();
+          if (socket) socket.emit("webrtc:ice_candidate", { candidate: event.candidate });
+
+          fetch(apiUrl("/api/live-call/signal"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "admin_ice", payload: event.candidate })
+          }).catch(() => {});
+        }
+      };
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      const offerData = JSON.stringify(offer);
+
+      // Emit via Socket
+      const socket = getSocket();
+      if (socket) socket.emit("admin:start_call", { offer: offerData });
+
+      // Post via REST API for Vercel Serverless persistence
+      await fetch(apiUrl("/api/live-call/start"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offer: offerData })
+      });
+
+      setIsBroadcasting(true);
+    } catch (err) {
+      console.error("Failed to start broadcast:", err);
+      setErrorMsg("Failed to start live broadcast.");
+    }
   };
 
-  useEffect(() => {
-    if (!isOpen) return;
+  const endBroadcast = () => {
     const socket = getSocket();
+    if (socket) socket.emit("admin:end_call");
 
-    const handleViewerJoined = ({ viewerSocketId }) => {
-      if (viewerSocketId) {
-        createPeerConnectionForViewer(viewerSocketId);
-      }
-    };
+    fetch(apiUrl("/api/live-call/end"), { method: "POST" }).catch(() => {});
 
-    const handleAnswer = async ({ viewerSocketId, answer }) => {
-      try {
-        const pc = peerConnectionsRef.current[viewerSocketId];
-        if (pc && pc.signalingState !== "stable") {
-          await pc.setRemoteDescription(new RTCSessionDescription(answer));
-        }
-      } catch (err) {
-        console.error("Error setting answer on admin:", err);
-      }
-    };
-
-    const handleIceCandidate = async ({ fromSocketId, candidate }) => {
-      try {
-        const pc = peerConnectionsRef.current[fromSocketId];
-        if (pc && pc.remoteDescription && candidate) {
-          await pc.addIceCandidate(new RTCIceCandidate(candidate));
-        }
-      } catch (err) {
-        console.error("Error adding candidate on admin:", err);
-      }
-    };
-
-    socket.on("viewer:joined", handleViewerJoined);
-    socket.on("webrtc:answer", handleAnswer);
-    socket.on("webrtc:ice_candidate", handleIceCandidate);
-
-    return () => {
-      socket.off("viewer:joined", handleViewerJoined);
-      socket.off("webrtc:answer", handleAnswer);
-      socket.off("webrtc:ice_candidate", handleIceCandidate);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+    setIsBroadcasting(false);
+    stopMediaTracks();
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+    onClose();
+  };
 
   const stopMediaTracks = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
-  };
-
-  const closeAllConnections = () => {
-    Object.values(peerConnectionsRef.current).forEach((pc) => pc?.close());
-    peerConnectionsRef.current = {};
-  };
-
-  const startBroadcast = () => {
-    const socket = getSocket();
-    if (socket) {
-      socket.emit("admin:start_call");
-    }
-    fetch(apiUrl("/api/live-call/start"), { method: "POST" }).catch(() => {});
-    setIsBroadcasting(true);
-  };
-
-  const endBroadcast = () => {
-    const socket = getSocket();
-    if (socket) {
-      socket.emit("admin:end_call");
-    }
-    fetch(apiUrl("/api/live-call/end"), { method: "POST" }).catch(() => {});
-    setIsBroadcasting(false);
-    stopMediaTracks();
-    closeAllConnections();
-    onClose();
   };
 
   const toggleMic = () => {
