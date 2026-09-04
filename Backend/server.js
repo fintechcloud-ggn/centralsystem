@@ -1041,7 +1041,7 @@ const requireSuperUser = (req, res, next) => {
   next();
 };
 
-app.post("/api/admin/login", async (req, res) => {
+app.post(["/api/admin/login", "/admin/login"], async (req, res) => {
   try {
     const { email, password } = req.body;
 
