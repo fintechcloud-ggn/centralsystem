@@ -75,6 +75,7 @@ const initializeLiveCallTable = async () => {
 
 const handleLiveCallStatus = async (req, res) => {
   try {
+    await initializeLiveCallTable();
     const rows = await query(`SELECT is_active, offer FROM live_call_status WHERE id = 1`);
     if (rows.length > 0) {
       return res.json({
@@ -98,7 +99,11 @@ const handleLiveCallStart = async (req, res) => {
   activeCallState.offer = offerStr;
 
   try {
-    await query(`UPDATE live_call_status SET is_active = 1, offer = ? WHERE id = 1`, [offerStr]);
+    await initializeLiveCallTable();
+    await query(
+      `INSERT INTO live_call_status (id, is_active, offer) VALUES (1, 1, ?) ON DUPLICATE KEY UPDATE is_active = 1, offer = ?`,
+      [offerStr, offerStr]
+    );
   } catch (err) {
     console.error("Error updating live call start in DB:", err);
   }
@@ -116,7 +121,10 @@ const handleLiveCallEnd = async (req, res) => {
   activeCallState.offer = null;
 
   try {
-    await query(`UPDATE live_call_status SET is_active = 0, offer = NULL WHERE id = 1`);
+    await initializeLiveCallTable();
+    await query(
+      `INSERT INTO live_call_status (id, is_active, offer) VALUES (1, 0, NULL) ON DUPLICATE KEY UPDATE is_active = 0, offer = NULL`
+    );
   } catch (err) {
     console.error("Error updating live call end in DB:", err);
   }
