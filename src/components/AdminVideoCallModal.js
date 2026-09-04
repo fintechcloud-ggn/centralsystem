@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { getSocket } from "../lib/socket";
+import { apiUrl } from "../lib/api";
 
 export default function AdminVideoCallModal({ isOpen, onClose }) {
   const localVideoRef = useRef(null);
@@ -129,9 +130,10 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
 
   const startBroadcast = () => {
     const socket = getSocket();
-    if (!socket) return;
-
-    socket.emit("admin:start_call");
+    if (socket) {
+      socket.emit("admin:start_call");
+    }
+    fetch(apiUrl("/api/live-call/start"), { method: "POST" }).catch(() => {});
     setIsBroadcasting(true);
   };
 
@@ -140,6 +142,7 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
     if (socket) {
       socket.emit("admin:end_call");
     }
+    fetch(apiUrl("/api/live-call/end"), { method: "POST" }).catch(() => {});
     setIsBroadcasting(false);
     stopMediaTracks();
     closeAllConnections();

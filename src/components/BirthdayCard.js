@@ -460,10 +460,25 @@ function CelebrationCards({ mode = "auto" }) {
     socket.on("call:started", handleCallStarted);
     socket.on("call:ended", handleCallEnded);
 
+    // HTTP Polling fallback for Vercel Serverless environment
+    const checkLiveCallStatus = async () => {
+      try {
+        const res = await fetch(apiUrl("/api/live-call/status"));
+        if (res.ok) {
+          const data = await res.json();
+          setIsCallActive(!!data?.isCallActive);
+        }
+      } catch (_) {}
+    };
+
+    checkLiveCallStatus();
+    const pollingInterval = setInterval(checkLiveCallStatus, 2000);
+
     return () => {
       socket.off("call:status", handleCallStatus);
       socket.off("call:started", handleCallStarted);
       socket.off("call:ended", handleCallEnded);
+      clearInterval(pollingInterval);
     };
   }, []);
 

@@ -46,19 +46,80 @@ app.use(express.json({ limit: "10mb" }));
 // Real-time Video Call Signaling State
 let activeCallState = {
   isCallActive: false,
-  adminSocketId: null
+  adminSocketId: null,
+  offer: null,
+  answers: {},
+  iceCandidates: []
 };
+
+// REST API Endpoints for Live Call (Vercel Serverless / HTTP Polling Fallback)
+app.get("/api/live-call/status", (req, res) => {
+  res.json({
+    isCallActive: activeCallState.isCallActive,
+    offer: activeCallState.offer
+  });
+});
+
+app.post("/api/live-call/start", (req, res) => {
+  const { offer } = req.body || {};
+  activeCallState.isCallActive = true;
+  activeCallState.offer = offer || null;
+  activeCallState.answers = {};
+  activeCallState.iceCandidates = [];
+
+  if (io) {
+    io.emit("call:started", { adminSocketId: activeCallState.adminSocketId, offer });
+  }
+
+  res.json({ success: true, isCallActive: true });
+});
+
+app.post("/api/live-call/end", (req, res) => {
+  activeCallState.isCallActive = false;
+  activeCallState.adminSocketId = null;
+  activeCallState.offer = null;
+  activeCallState.answers = {};
+  activeCallState.iceCandidates = [];
+
+  if (io) {
+    io.emit("call:ended");
+  }
+
+  res.json({ success: true, isCallActive: false });
+});
+
+app.post("/api/live-call/signal", (req, res) => {
+  const { type, payload } = req.body || {};
+  if (type === "offer") {
+    activeCallState.offer = payload?.offer || null;
+  } else if (type === "answer") {
+    activeCallState.answers[payload?.viewerId || "default"] = payload?.answer;
+  } else if (type === "ice_candidate") {
+    activeCallState.iceCandidates.push(payload);
+  }
+  res.json({ success: true });
+});
+
+app.get("/api/live-call/signals", (req, res) => {
+  res.json({
+    offer: activeCallState.offer,
+    answers: activeCallState.answers,
+    iceCandidates: activeCallState.iceCandidates
+  });
+});
 
 io.on("connection", (socket) => {
   // Send initial call status to client upon connection
   socket.emit("call:status", {
-    isCallActive: activeCallState.isCallActive
+    isCallActive: activeCallState.isCallActive,
+    offer: activeCallState.offer
   });
 
-  socket.on("admin:start_call", () => {
+  socket.on("admin:start_call", (data) => {
     activeCallState.isCallActive = true;
     activeCallState.adminSocketId = socket.id;
-    io.emit("call:started", { adminSocketId: socket.id });
+    activeCallState.offer = data?.offer || null;
+    io.emit("call:started", { adminSocketId: socket.id, offer: activeCallState.offer });
   });
 
   socket.on("viewer:join", () => {
@@ -103,6 +164,9 @@ io.on("connection", (socket) => {
   socket.on("admin:end_call", () => {
     activeCallState.isCallActive = false;
     activeCallState.adminSocketId = null;
+    activeCallState.offer = null;
+    activeCallState.answers = {};
+    activeCallState.iceCandidates = [];
     io.emit("call:ended");
   });
 
@@ -110,6 +174,7 @@ io.on("connection", (socket) => {
     if (socket.id === activeCallState.adminSocketId) {
       activeCallState.isCallActive = false;
       activeCallState.adminSocketId = null;
+      activeCallState.offer = null;
       io.emit("call:ended");
     }
   });
