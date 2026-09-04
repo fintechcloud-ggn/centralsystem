@@ -1088,8 +1088,8 @@ app.post(["/api/admin/login", "/admin/login"], async (req, res) => {
       admin: { id: admin.id, email: admin.email, role: adminRole }
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Server Error" });
+    console.error("Login route error:", error);
+    return res.status(500).json({ error: error?.message || "Server Error" });
   }
 });
 
