@@ -53,14 +53,14 @@ let activeCallState = {
 };
 
 // REST API Endpoints for Live Call (Vercel Serverless / HTTP Polling Fallback)
-app.get("/api/live-call/status", (req, res) => {
+const handleLiveCallStatus = (req, res) => {
   res.json({
     isCallActive: activeCallState.isCallActive,
     offer: activeCallState.offer
   });
-});
+};
 
-app.post("/api/live-call/start", (req, res) => {
+const handleLiveCallStart = (req, res) => {
   const { offer } = req.body || {};
   activeCallState.isCallActive = true;
   activeCallState.offer = offer || null;
@@ -72,9 +72,9 @@ app.post("/api/live-call/start", (req, res) => {
   }
 
   res.json({ success: true, isCallActive: true });
-});
+};
 
-app.post("/api/live-call/end", (req, res) => {
+const handleLiveCallEnd = (req, res) => {
   activeCallState.isCallActive = false;
   activeCallState.adminSocketId = null;
   activeCallState.offer = null;
@@ -86,9 +86,9 @@ app.post("/api/live-call/end", (req, res) => {
   }
 
   res.json({ success: true, isCallActive: false });
-});
+};
 
-app.post("/api/live-call/signal", (req, res) => {
+const handleLiveCallSignal = (req, res) => {
   const { type, payload } = req.body || {};
   if (type === "offer") {
     activeCallState.offer = payload?.offer || null;
@@ -98,15 +98,21 @@ app.post("/api/live-call/signal", (req, res) => {
     activeCallState.iceCandidates.push(payload);
   }
   res.json({ success: true });
-});
+};
 
-app.get("/api/live-call/signals", (req, res) => {
+const handleLiveCallSignals = (req, res) => {
   res.json({
     offer: activeCallState.offer,
     answers: activeCallState.answers,
     iceCandidates: activeCallState.iceCandidates
   });
-});
+};
+
+app.get(["/api/live-call/status", "/live-call/status"], handleLiveCallStatus);
+app.post(["/api/live-call/start", "/live-call/start"], handleLiveCallStart);
+app.post(["/api/live-call/end", "/live-call/end"], handleLiveCallEnd);
+app.post(["/api/live-call/signal", "/live-call/signal"], handleLiveCallSignal);
+app.get(["/api/live-call/signals", "/live-call/signals"], handleLiveCallSignals);
 
 io.on("connection", (socket) => {
   // Send initial call status to client upon connection
