@@ -24,9 +24,6 @@
     },
     "api/employees/[employeeCode]/photos.js": {
       "includeFiles": "Backend/**"
-    },
-    "api/live-call/[...path].js": {
-      "includeFiles": "Backend/**"
     }
   },
   "rewrites": [
