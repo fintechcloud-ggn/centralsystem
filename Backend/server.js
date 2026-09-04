@@ -52,34 +52,74 @@ let activeCallState = {
   iceCandidates: []
 };
 
-// REST API Endpoints for Live Call (Vercel Serverless / HTTP Polling Fallback)
-const handleLiveCallStatus = (req, res) => {
+// REST API Endpoints for Live Call (MySQL Database & Serverless persistent state)
+const initializeLiveCallTable = async () => {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS live_call_status (
+        id INT PRIMARY KEY DEFAULT 1,
+        is_active TINYINT(1) DEFAULT 0,
+        offer TEXT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    const rows = await query(`SELECT id FROM live_call_status WHERE id = 1`);
+    if (rows.length === 0) {
+      await query(`INSERT INTO live_call_status (id, is_active, offer) VALUES (1, 0, NULL)`);
+    }
+  } catch (err) {
+    console.error("Error initializing live_call_status table:", err);
+  }
+};
+
+const handleLiveCallStatus = async (req, res) => {
+  try {
+    const rows = await query(`SELECT is_active, offer FROM live_call_status WHERE id = 1`);
+    if (rows.length > 0) {
+      return res.json({
+        isCallActive: Boolean(rows[0].is_active),
+        offer: rows[0].offer
+      });
+    }
+  } catch (err) {
+    console.error("Error reading live call status from DB:", err);
+  }
   res.json({
     isCallActive: activeCallState.isCallActive,
     offer: activeCallState.offer
   });
 };
 
-const handleLiveCallStart = (req, res) => {
+const handleLiveCallStart = async (req, res) => {
   const { offer } = req.body || {};
+  const offerStr = typeof offer === "object" ? JSON.stringify(offer) : (offer || null);
   activeCallState.isCallActive = true;
-  activeCallState.offer = offer || null;
-  activeCallState.answers = {};
-  activeCallState.iceCandidates = [];
+  activeCallState.offer = offerStr;
+
+  try {
+    await query(`UPDATE live_call_status SET is_active = 1, offer = ? WHERE id = 1`, [offerStr]);
+  } catch (err) {
+    console.error("Error updating live call start in DB:", err);
+  }
 
   if (io) {
-    io.emit("call:started", { adminSocketId: activeCallState.adminSocketId, offer });
+    io.emit("call:started", { adminSocketId: activeCallState.adminSocketId, offer: offerStr });
   }
 
   res.json({ success: true, isCallActive: true });
 };
 
-const handleLiveCallEnd = (req, res) => {
+const handleLiveCallEnd = async (req, res) => {
   activeCallState.isCallActive = false;
   activeCallState.adminSocketId = null;
   activeCallState.offer = null;
-  activeCallState.answers = {};
-  activeCallState.iceCandidates = [];
+
+  try {
+    await query(`UPDATE live_call_status SET is_active = 0, offer = NULL WHERE id = 1`);
+  } catch (err) {
+    console.error("Error updating live call end in DB:", err);
+  }
 
   if (io) {
     io.emit("call:ended");
@@ -2090,7 +2130,8 @@ const initializeApp = ({ runMigrations = false } = {}) => {
       .then(() => initializeActivityLogsTable())
       .then(() => initializeEmployeesTable())
       .then(() => initializeContestsTable())
-      .then(() => initializeQuotesTable());
+      .then(() => initializeQuotesTable())
+      .then(() => initializeLiveCallTable());
       // .then(() => seedEmployeesTable())
   }
 
