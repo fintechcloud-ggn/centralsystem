@@ -93,20 +93,28 @@ function AdminPanel() {
             </div>
           </div>
 
-          {/* Right Side: Start Live Video Call Broadcast Button */}
+          {/* Right Side: Start Live Video Call Broadcast Button Card */}
           <div className="flex items-center justify-end">
             <button
+              type="button"
               onClick={() => setIsCallModalOpen(true)}
-              className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-full border border-red-400/40 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_20px_rgba(225,29,72,0.35)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_25px_rgba(225,29,72,0.5)] active:scale-95"
+              className="flex items-center gap-3.5 rounded-2xl border border-red-200/80 bg-white/85 px-4 py-2.5 shadow-[0_4px_20px_rgba(225,29,72,0.06)] backdrop-blur-md text-left transition-all duration-200 hover:border-red-300 hover:bg-white hover:shadow-[0_6px_24px_rgba(225,29,72,0.12)] hover:scale-[1.02] active:scale-[0.98]"
             >
-              <span className="relative flex h-3 w-3 items-center justify-center">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="text-base leading-none">📹</span>
-                <span>Start Live Broadcast</span>
-              </span>
+              <div className="h-8 w-1.5 shrink-0 rounded-full bg-gradient-to-b from-red-500 via-rose-500 to-pink-500" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold tracking-tight text-slate-900">
+                    Live Video Broadcast
+                  </p>
+                  <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600 border border-red-200/60">
+                    <span className="mr-1 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                    Ready
+                  </span>
+                </div>
+                <p className="text-[11px] font-medium text-slate-400">
+                  Click to start live video call stream
+                </p>
+              </div>
             </button>
           </div>
 
