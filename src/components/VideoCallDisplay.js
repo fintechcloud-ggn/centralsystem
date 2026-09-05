@@ -31,17 +31,26 @@ export default function VideoCallDisplay({ onCallEnded }) {
 
     pc.ontrack = (event) => {
       if (videoRef.current) {
-        const streamTracks = [
-          ...(event.streams && event.streams[0] ? event.streams[0].getTracks() : []),
-          ...pc.getReceivers().map((r) => r.track).filter(Boolean)
-        ];
-        const uniqueTracks = Array.from(new Map(streamTracks.map((t) => [t.id, t])).values());
-        const combinedStream = new MediaStream(uniqueTracks);
+        let stream = event.streams && event.streams[0];
+        if (!stream) {
+          if (!videoRef.current.srcObject) {
+            videoRef.current.srcObject = new MediaStream();
+          }
+          stream = videoRef.current.srcObject;
+          if (!stream.getTracks().some((t) => t.id === event.track.id)) {
+            stream.addTrack(event.track);
+          }
+        } else {
+          if (videoRef.current.srcObject !== stream) {
+            videoRef.current.srcObject = stream;
+          }
+        }
 
-        videoRef.current.srcObject = combinedStream;
-        videoRef.current
-          .play()
-          .catch((err) => console.warn("Video play error:", err));
+        if (videoRef.current.paused) {
+          videoRef.current
+            .play()
+            .catch((err) => console.warn("Video play error:", err));
+        }
 
         setStreamConnected(true);
       }
@@ -146,10 +155,21 @@ export default function VideoCallDisplay({ onCallEnded }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+      if (!isMuted) {
+        videoRef.current.volume = 1.0;
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  }, [isMuted]);
+
   const enableAudio = (e) => {
     if (e) e.stopPropagation();
     if (videoRef.current) {
       videoRef.current.muted = false;
+      videoRef.current.volume = 1.0;
       setIsMuted(false);
       videoRef.current.play().catch(() => { });
     }
@@ -158,12 +178,12 @@ export default function VideoCallDisplay({ onCallEnded }) {
   const toggleSound = (e) => {
     if (e) e.stopPropagation();
     if (videoRef.current) {
-      const nextMutedState = !videoRef.current.muted;
+      const nextMutedState = !isMuted;
       videoRef.current.muted = nextMutedState;
-      setIsMuted(nextMutedState);
       if (!nextMutedState) {
-        videoRef.current.play().catch(() => { });
+        videoRef.current.volume = 1.0;
       }
+      setIsMuted(nextMutedState);
     }
   };
 
