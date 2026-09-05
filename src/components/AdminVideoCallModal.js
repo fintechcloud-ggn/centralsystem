@@ -42,6 +42,8 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
     };
   }, [isOpen]);
 
+  const processedCandidatesRef = useRef(new Set());
+
   // Polling for viewer WebRTC answer and ICE candidates over REST API (Vercel Serverless Compatible)
   useEffect(() => {
     if (!isOpen || !isBroadcasting) return;
@@ -49,10 +51,10 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
     const checkSignals = async () => {
       try {
         const pc = pcRef.current;
-        if (!pc) return;
+        if (!pc || pc.signalingState === "closed") return;
 
         const res = await fetch(apiUrl("/api/live-call/signals"));
-        if (!res.ok) return;
+        if (!res.ok || pc.signalingState === "closed") return;
 
         const data = await res.json();
 
@@ -66,14 +68,19 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
         if (data?.viewerIceCandidates && Array.isArray(data.viewerIceCandidates)) {
           for (const cand of data.viewerIceCandidates) {
             try {
-              if (pc.remoteDescription && cand) {
+              if (!cand || pc.signalingState === "closed" || !pc.remoteDescription) continue;
+              const candKey = typeof cand === "string" ? cand : JSON.stringify(cand);
+              if (!processedCandidatesRef.current.has(candKey)) {
+                processedCandidatesRef.current.add(candKey);
                 await pc.addIceCandidate(new RTCIceCandidate(cand));
               }
             } catch (_) {}
           }
         }
       } catch (err) {
-        console.error("Error polling signals on admin:", err);
+        if (pcRef.current?.signalingState !== "closed") {
+          console.error("Error polling signals on admin:", err);
+        }
       }
     };
 

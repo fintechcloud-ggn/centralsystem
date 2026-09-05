@@ -8,6 +8,11 @@ export default function VideoCallDisplay({ onCallEnded }) {
   const [streamConnected, setStreamConnected] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
 
+  const onCallEndedRef = useRef(onCallEnded);
+  onCallEndedRef.current = onCallEnded;
+
+  const processedCandidatesRef = useRef(new Set());
+
   useEffect(() => {
     const socket = getSocket();
     const configuration = {
@@ -22,11 +27,13 @@ export default function VideoCallDisplay({ onCallEnded }) {
 
     pc.ontrack = (event) => {
       if (videoRef.current && event.streams[0]) {
-        videoRef.current.srcObject = event.streams[0];
+        if (videoRef.current.srcObject !== event.streams[0]) {
+          videoRef.current.srcObject = event.streams[0];
+          videoRef.current
+            .play()
+            .catch((err) => console.warn("Video play error:", err));
+        }
         setStreamConnected(true);
-        videoRef.current
-          .play()
-          .catch((err) => console.warn("Video play error:", err));
       }
     };
 
@@ -44,12 +51,17 @@ export default function VideoCallDisplay({ onCallEnded }) {
 
     const setupStreamFromOffer = async (offerStr) => {
       try {
-        if (!offerStr || pc.remoteDescription) return;
+        if (!offerStr || pc.signalingState === "closed" || pc.remoteDescription) return;
         const offerObj = typeof offerStr === "string" ? JSON.parse(offerStr) : offerStr;
 
         await pc.setRemoteDescription(new RTCSessionDescription(offerObj));
+        if (pc.signalingState === "closed") return;
+
         const answer = await pc.createAnswer();
+        if (pc.signalingState === "closed") return;
+
         await pc.setLocalDescription(answer);
+        if (pc.signalingState === "closed") return;
 
         const answerData = JSON.stringify(answer);
 
@@ -61,7 +73,9 @@ export default function VideoCallDisplay({ onCallEnded }) {
           body: JSON.stringify({ type: "answer", payload: answerData })
         }).catch(() => {});
       } catch (err) {
-        console.error("Error setting up stream from offer:", err);
+        if (pc.signalingState !== "closed") {
+          console.error("Error setting up stream from offer:", err);
+        }
       }
     };
 
@@ -71,7 +85,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
     };
 
     const handleCallEnded = () => {
-      if (onCallEnded) onCallEnded();
+      if (onCallEndedRef.current) onCallEndedRef.current();
     };
 
     socket.on("webrtc:offer", handleSocketOffer);
@@ -80,25 +94,32 @@ export default function VideoCallDisplay({ onCallEnded }) {
     // Initial Fetch & Polling for signals over HTTP
     const pollSignals = async () => {
       try {
+        if (pc.signalingState === "closed") return;
+
         const res = await fetch(apiUrl("/api/live-call/signals"));
-        if (!res.ok) return;
+        if (!res.ok || pc.signalingState === "closed") return;
 
         const data = await res.json();
-        if (data?.offer && !pc.remoteDescription) {
+        if (data?.offer && !pc.remoteDescription && pc.signalingState !== "closed") {
           await setupStreamFromOffer(data.offer);
         }
 
         if (data?.adminIceCandidates && Array.isArray(data.adminIceCandidates)) {
           for (const cand of data.adminIceCandidates) {
             try {
-              if (pc.remoteDescription && cand) {
+              if (!cand || pc.signalingState === "closed" || !pc.remoteDescription) continue;
+              const candKey = typeof cand === "string" ? cand : JSON.stringify(cand);
+              if (!processedCandidatesRef.current.has(candKey)) {
+                processedCandidatesRef.current.add(candKey);
                 await pc.addIceCandidate(new RTCIceCandidate(cand));
               }
             } catch (_) {}
           }
         }
       } catch (err) {
-        console.error("Error polling signals in display:", err);
+        if (pc.signalingState !== "closed") {
+          console.error("Error polling signals in display:", err);
+        }
       }
     };
 
@@ -109,9 +130,11 @@ export default function VideoCallDisplay({ onCallEnded }) {
       socket.off("webrtc:offer", handleSocketOffer);
       socket.off("call:ended", handleCallEnded);
       clearInterval(interval);
-      pc.close();
+      if (pc.signalingState !== "closed") {
+        pc.close();
+      }
     };
-  }, [onCallEnded]);
+  }, []);
 
   const toggleSound = () => {
     if (videoRef.current) {

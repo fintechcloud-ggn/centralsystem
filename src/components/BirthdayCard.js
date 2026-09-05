@@ -482,10 +482,14 @@ function CelebrationCards({ mode = "auto" }) {
     };
   }, []);
 
+  const handleVideoCallEnded = React.useCallback(() => {
+    setIsCallActive(false);
+  }, []);
+
   if (isCallActive) {
     return (
       <VideoCallDisplay
-        onCallEnded={() => setIsCallActive(false)}
+        onCallEnded={handleVideoCallEnded}
       />
     );
   }
