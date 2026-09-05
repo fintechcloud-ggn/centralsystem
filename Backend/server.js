@@ -160,26 +160,6 @@ const handleLiveCallEnd = async (req, res) => {
   res.json({ success: true, isCallActive: false });
 };
 
-const handleLiveCallSignal = (req, res) => {
-  const { type, payload } = req.body || {};
-  if (type === "offer") {
-    activeCallState.offer = payload?.offer || null;
-  } else if (type === "answer") {
-    activeCallState.answers[payload?.viewerId || "default"] = payload?.answer;
-  } else if (type === "ice_candidate") {
-    activeCallState.iceCandidates.push(payload);
-  }
-  res.json({ success: true });
-};
-
-const handleLiveCallSignals = (req, res) => {
-  res.json({
-    offer: activeCallState.offer,
-    answers: activeCallState.answers,
-    iceCandidates: activeCallState.iceCandidates
-  });
-};
-
 app.get(["/api/live-call/status", "/live-call/status"], handleLiveCallStatus);
 app.post(["/api/live-call/start", "/live-call/start"], handleLiveCallStart);
 app.post(["/api/live-call/end", "/live-call/end"], handleLiveCallEnd);
