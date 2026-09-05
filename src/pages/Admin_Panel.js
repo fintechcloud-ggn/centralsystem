@@ -98,22 +98,30 @@ function AdminPanel() {
             <button
               type="button"
               onClick={() => setIsCallModalOpen(true)}
-              className="flex items-center gap-3.5 rounded-2xl border border-red-200/80 bg-white/85 px-4 py-2.5 shadow-[0_4px_20px_rgba(225,29,72,0.06)] backdrop-blur-md text-left transition-all duration-200 hover:border-red-300 hover:bg-white hover:shadow-[0_6px_24px_rgba(225,29,72,0.12)] hover:scale-[1.02] active:scale-[0.98]"
+              className="group relative flex items-center justify-between gap-4 rounded-2xl border border-red-300/80 bg-gradient-to-r from-red-500/10 via-rose-500/5 to-white/95 px-4 py-2.5 shadow-[0_4px_20px_rgba(225,29,72,0.08)] backdrop-blur-md text-left transition-all duration-300 hover:border-red-400 hover:shadow-[0_6px_25px_rgba(225,29,72,0.2)] hover:scale-[1.03] active:scale-[0.98]"
             >
-              <div className="h-8 w-1.5 shrink-0 rounded-full bg-gradient-to-b from-red-500 via-rose-500 to-pink-500" />
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold tracking-tight text-slate-900">
-                    Live Video Broadcast
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="h-8 w-1.5 shrink-0 rounded-full bg-gradient-to-b from-red-500 via-rose-500 to-pink-500" />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold tracking-tight text-slate-900 group-hover:text-red-600 transition-colors">
+                      Live Video Broadcast
+                    </p>
+                    <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-600 border border-red-200">
+                      <span className="mr-1 h-1.5 w-1.5 rounded-full bg-red-600 animate-pulse" />
+                      Ready
+                    </span>
+                  </div>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Click to start live video stream
                   </p>
-                  <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600 border border-red-200/60">
-                    <span className="mr-1 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                    Ready
-                  </span>
                 </div>
-                <p className="text-[11px] font-medium text-slate-400">
-                  Click to start live video call stream
-                </p>
+              </div>
+
+              {/* Interactive Button Badge */}
+              <div className="flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 px-3 py-1.5 text-xs font-bold text-white shadow-md transition-all duration-300 group-hover:bg-red-500 group-hover:shadow-red-500/40 group-hover:scale-105">
+                <span className="text-sm leading-none">📹</span>
+                <span>Start</span>
               </div>
             </button>
           </div>
