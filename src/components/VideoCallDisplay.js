@@ -18,7 +18,11 @@ export default function VideoCallDisplay({ onCallEnded }) {
     const configuration = {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" }
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:stun3.l.google.com:19302" },
+        { urls: "stun:stun4.l.google.com:19302" },
+        { urls: "stun:global.stun.twilio.com:3478" }
       ]
     };
 
@@ -26,13 +30,19 @@ export default function VideoCallDisplay({ onCallEnded }) {
     pcRef.current = pc;
 
     pc.ontrack = (event) => {
-      if (videoRef.current && event.streams[0]) {
-        if (videoRef.current.srcObject !== event.streams[0]) {
-          videoRef.current.srcObject = event.streams[0];
-          videoRef.current
-            .play()
-            .catch((err) => console.warn("Video play error:", err));
-        }
+      if (videoRef.current) {
+        const streamTracks = [
+          ...(event.streams && event.streams[0] ? event.streams[0].getTracks() : []),
+          ...pc.getReceivers().map((r) => r.track).filter(Boolean)
+        ];
+        const uniqueTracks = Array.from(new Map(streamTracks.map((t) => [t.id, t])).values());
+        const combinedStream = new MediaStream(uniqueTracks);
+
+        videoRef.current.srcObject = combinedStream;
+        videoRef.current
+          .play()
+          .catch((err) => console.warn("Video play error:", err));
+
         setStreamConnected(true);
       }
     };
@@ -136,7 +146,17 @@ export default function VideoCallDisplay({ onCallEnded }) {
     };
   }, []);
 
-  const toggleSound = () => {
+  const enableAudio = (e) => {
+    if (e) e.stopPropagation();
+    if (videoRef.current) {
+      videoRef.current.muted = false;
+      setIsMuted(false);
+      videoRef.current.play().catch(() => {});
+    }
+  };
+
+  const toggleSound = (e) => {
+    if (e) e.stopPropagation();
     if (videoRef.current) {
       const nextMutedState = !videoRef.current.muted;
       videoRef.current.muted = nextMutedState;
@@ -148,7 +168,10 @@ export default function VideoCallDisplay({ onCallEnded }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex h-screen w-screen items-center justify-center bg-black overflow-hidden">
+    <div
+      onClick={enableAudio}
+      className="fixed inset-0 z-50 flex h-screen w-screen items-center justify-center bg-black overflow-hidden cursor-pointer"
+    >
       {/* Live Badge Overlay */}
       <div className="absolute top-6 left-6 z-20 flex items-center gap-3 rounded-full bg-black/70 px-5 py-2.5 backdrop-blur-md border border-white/20 shadow-2xl">
         <span className="relative flex h-3.5 w-3.5">
@@ -169,7 +192,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
             : "bg-white/15 border-white/25 text-white hover:bg-white/25"
         }`}
       >
-        {isMuted ? "🔊 Tap to Enable Audio" : "🔊 Sound On (Tap to Mute)"}
+        {isMuted ? "🔊 Tap Anywhere to Enable Audio" : "🔊 Sound On (Tap to Mute)"}
       </button>
 
       {/* Main Stream Video Element */}
