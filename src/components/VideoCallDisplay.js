@@ -6,7 +6,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
   const videoRef = useRef(null);
   const pcRef = useRef(null);
   const [streamConnected, setStreamConnected] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
 
   const onCallEndedRef = useRef(onCallEnded);
   onCallEndedRef.current = onCallEnded;
@@ -47,9 +47,17 @@ export default function VideoCallDisplay({ onCallEnded }) {
         }
 
         if (videoRef.current.paused) {
+          videoRef.current.muted = isMuted;
+          videoRef.current.volume = 1.0;
           videoRef.current
             .play()
-            .catch((err) => console.warn("Video play error:", err));
+            .catch((err) => {
+              if (err.name === "NotAllowedError") {
+                videoRef.current.muted = true;
+                setIsMuted(true);
+                videoRef.current.play().catch(() => {});
+              }
+            });
         }
 
         setStreamConnected(true);
@@ -153,6 +161,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
         pc.close();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -160,7 +169,13 @@ export default function VideoCallDisplay({ onCallEnded }) {
       videoRef.current.muted = isMuted;
       if (!isMuted) {
         videoRef.current.volume = 1.0;
-        videoRef.current.play().catch(() => {});
+        videoRef.current.play().catch((err) => {
+          if (err.name === "NotAllowedError") {
+            videoRef.current.muted = true;
+            setIsMuted(true);
+            videoRef.current.play().catch(() => {});
+          }
+        });
       }
     }
   }, [isMuted]);
