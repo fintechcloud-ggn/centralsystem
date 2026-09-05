@@ -4,7 +4,6 @@ import axios from "axios";
 import { getAdminToken, isSuperUser, setAdminRole } from "../components/adminAuth";
 import { apiUrl } from "../lib/api";
 import PaginationFooter from "../components/PaginationFooter";
-import AdminVideoCallModal from "../components/AdminVideoCallModal";
 
 const quickActions = [
   { label: "Add New Employee", to: "/admin/NewUser" },
@@ -50,7 +49,6 @@ function AdminOverview() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [canDelete, setCanDelete] = useState(isSuperUser());
-  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const visibleQuickActions = quickActions.filter(
     (action) => !action.superUserOnly || canDelete
   );
@@ -165,13 +163,6 @@ function AdminOverview() {
           Employee widgets now update from live database records.
         </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-          <button
-            onClick={() => setIsCallModalOpen(true)}
-            className="flex items-center justify-center gap-2 rounded-full border border-red-200 bg-red-600 px-4 py-3 text-sm font-bold text-white no-underline shadow-md transition hover:bg-red-500 hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <span className="h-2.5 w-2.5 rounded-full bg-white animate-pulse" />
-            📹 Start Live Video Call Broadcast
-          </button>
           {visibleQuickActions.map((action) => (
             <Link
               key={action.label}
@@ -183,11 +174,6 @@ function AdminOverview() {
           ))}
         </div>
       </div>
-
-      <AdminVideoCallModal
-        isOpen={isCallModalOpen}
-        onClose={() => setIsCallModalOpen(false)}
-      />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((item) => (
