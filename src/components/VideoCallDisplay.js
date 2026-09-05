@@ -55,7 +55,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ type: "viewer_ice", payload: event.candidate })
-        }).catch(() => {});
+        }).catch(() => { });
       }
     };
 
@@ -81,7 +81,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ type: "answer", payload: answerData })
-        }).catch(() => {});
+        }).catch(() => { });
       } catch (err) {
         if (pc.signalingState !== "closed") {
           console.error("Error setting up stream from offer:", err);
@@ -123,7 +123,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
                 processedCandidatesRef.current.add(candKey);
                 await pc.addIceCandidate(new RTCIceCandidate(cand));
               }
-            } catch (_) {}
+            } catch (_) { }
           }
         }
       } catch (err) {
@@ -151,7 +151,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
     if (videoRef.current) {
       videoRef.current.muted = false;
       setIsMuted(false);
-      videoRef.current.play().catch(() => {});
+      videoRef.current.play().catch(() => { });
     }
   };
 
@@ -162,7 +162,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
       videoRef.current.muted = nextMutedState;
       setIsMuted(nextMutedState);
       if (!nextMutedState) {
-        videoRef.current.play().catch(() => {});
+        videoRef.current.play().catch(() => { });
       }
     }
   };
@@ -178,6 +178,9 @@ export default function VideoCallDisplay({ onCallEnded }) {
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-600"></span>
         </span>
+        {/* <span className="text-sm font-black tracking-widest uppercase text-white">
+          Live Admin Broadcast
+        </span> */}
         <span className="text-sm font-black tracking-widest uppercase text-white">
           Live Admin Broadcast
         </span>
@@ -186,11 +189,10 @@ export default function VideoCallDisplay({ onCallEnded }) {
       {/* Audio Sound Toggle Control */}
       <button
         onClick={toggleSound}
-        className={`absolute top-6 right-6 z-20 flex items-center gap-2 rounded-full px-5 py-2.5 backdrop-blur-md border shadow-2xl text-sm font-bold transition-all ${
-          isMuted
+        className={`absolute top-6 right-6 z-20 flex items-center gap-2 rounded-full px-5 py-2.5 backdrop-blur-md border shadow-2xl text-sm font-bold transition-all ${isMuted
             ? "bg-amber-500/90 border-amber-400 text-black animate-bounce hover:bg-amber-400"
             : "bg-white/15 border-white/25 text-white hover:bg-white/25"
-        }`}
+          }`}
       >
         {isMuted ? "🔊 Tap Anywhere to Enable Audio" : "🔊 Sound On (Tap to Mute)"}
       </button>
