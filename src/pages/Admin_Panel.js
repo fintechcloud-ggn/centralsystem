@@ -52,12 +52,13 @@ function AdminPanel() {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
 
         {/* Header */}
-        <header className="relative flex min-h-24 flex-col gap-4 border-b border-white/60 bg-white/55 px-4 py-4 backdrop-blur-xl sm:px-6 lg:min-h-28 lg:flex-row lg:items-center lg:justify-between">
+        <header className="relative flex flex-col gap-4 border-b border-slate-200/60 bg-white/70 px-4 py-3.5 backdrop-blur-md sm:px-6 lg:flex-row lg:items-center lg:justify-between shadow-xs">
 
-          <div className="flex w-full items-center justify-between gap-3 lg:w-auto lg:justify-start">
+          {/* Left Side: Sidebar Toggle + Admin Control Center */}
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             <button
               type="button"
-              className="rounded-md border border-white/70 bg-white/75 px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm md:hidden"
+              className="rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-white md:hidden"
               onClick={() => setSidebarOpen(true)}
             >
               Menu
@@ -65,33 +66,47 @@ function AdminPanel() {
 
             <button
               type="button"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/70 bg-white/75 text-slate-500 shadow-sm transition hover:bg-white"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/80 bg-white/90 text-slate-600 shadow-xs transition-all duration-200 hover:bg-white hover:border-indigo-300 hover:text-indigo-600 active:scale-95"
               onClick={() => setIsSidebarCollapsed((prev) => !prev)}
               title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
             >
               <ChevronIcon collapsed={isSidebarCollapsed} />
             </button>
-          </div>
 
-          <div className="flex w-full flex-wrap items-center justify-between gap-4 lg:w-auto lg:justify-end">
-            <div className="flex items-center gap-3 rounded-2xl border border-white/80 bg-white/65 px-4 py-3 shadow-[0_14px_40px_rgba(148,163,184,0.14)] backdrop-blur-xl sm:gap-4 sm:rounded-[28px] sm:px-6">
-              <div className="h-10 w-1 shrink-0 rounded-full bg-gradient-to-b from-[#c8b8ff] to-[#8cc8ff]" />
+            {/* Admin Control Center Card (Left Side) */}
+            <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/80 bg-white/85 px-4 py-2.5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] backdrop-blur-md transition-all hover:border-slate-300">
+              <div className="h-8 w-1.5 shrink-0 rounded-full bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500" />
               <div className="min-w-0">
-                <p className="text-base font-semibold tracking-wide text-slate-800">
-                  Admin Control Center
-                </p>
-                <p className="text-xs text-slate-400">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold tracking-tight text-slate-900">
+                    Admin Control Center
+                  </p>
+                  <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 border border-emerald-200/60">
+                    <span className="mr-1 h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Active
+                  </span>
+                </div>
+                <p className="text-[11px] font-medium text-slate-400">
                   Employees, contests, and content operations
                 </p>
               </div>
             </div>
+          </div>
 
+          {/* Right Side: Start Live Video Call Broadcast Button */}
+          <div className="flex items-center justify-end">
             <button
               onClick={() => setIsCallModalOpen(true)}
-              className="flex items-center justify-center gap-2 rounded-full border border-red-200 bg-red-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-red-500 hover:scale-[1.02] active:scale-[0.98]"
+              className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-full border border-red-400/40 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_20px_rgba(225,29,72,0.35)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_25px_rgba(225,29,72,0.5)] active:scale-95"
             >
-              <span className="h-2.5 w-2.5 rounded-full bg-white animate-pulse" />
-              📹 Start Live Video Call Broadcast
+              <span className="relative flex h-3 w-3 items-center justify-center">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-base leading-none">📹</span>
+                <span>Start Live Broadcast</span>
+              </span>
             </button>
           </div>
 
