@@ -53,29 +53,6 @@ let activeCallState = {
   viewerIceCandidates: []
 };
 
-const handleLiveCallSignal = async (req, res) => {
-  const { type, payload } = req.body || {};
-  if (type === "offer") {
-    activeCallState.offer = typeof payload === "object" ? JSON.stringify(payload) : payload;
-  } else if (type === "answer") {
-    activeCallState.answer = typeof payload === "object" ? JSON.stringify(payload) : (payload?.answer || payload);
-  } else if (type === "admin_ice" && payload) {
-    activeCallState.adminIceCandidates.push(payload);
-  } else if (type === "viewer_ice" && payload) {
-    activeCallState.viewerIceCandidates.push(payload);
-  }
-  res.json({ success: true });
-};
-
-const handleLiveCallSignals = async (req, res) => {
-  res.json({
-    offer: activeCallState.offer,
-    answer: activeCallState.answer,
-    adminIceCandidates: activeCallState.adminIceCandidates,
-    viewerIceCandidates: activeCallState.viewerIceCandidates
-  });
-};
-
 // REST API Endpoints for Live Call (MySQL Database & Serverless persistent state)
 const initializeLiveCallTable = async () => {
   try {
@@ -84,17 +61,103 @@ const initializeLiveCallTable = async () => {
         id INT PRIMARY KEY DEFAULT 1,
         is_active TINYINT(1) DEFAULT 0,
         offer TEXT NULL,
+        answer TEXT NULL,
+        admin_ice LONGTEXT NULL,
+        viewer_ice LONGTEXT NULL,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
+    const columns = await query(`SHOW COLUMNS FROM live_call_status`);
+    const colNames = new Set(columns.map((c) => c.Field));
+    if (!colNames.has("answer")) {
+      await query(`ALTER TABLE live_call_status ADD COLUMN answer TEXT NULL`);
+    }
+    if (!colNames.has("admin_ice")) {
+      await query(`ALTER TABLE live_call_status ADD COLUMN admin_ice LONGTEXT NULL`);
+    }
+    if (!colNames.has("viewer_ice")) {
+      await query(`ALTER TABLE live_call_status ADD COLUMN viewer_ice LONGTEXT NULL`);
+    }
+
     const rows = await query(`SELECT id FROM live_call_status WHERE id = 1`);
     if (rows.length === 0) {
-      await query(`INSERT INTO live_call_status (id, is_active, offer) VALUES (1, 0, NULL)`);
+      await query(
+        `INSERT INTO live_call_status (id, is_active, offer, answer, admin_ice, viewer_ice) VALUES (1, 0, NULL, NULL, '[]', '[]')`
+      );
     }
   } catch (err) {
     console.error("Error initializing live_call_status table:", err);
   }
+};
+
+const handleLiveCallSignal = async (req, res) => {
+  const { type, payload } = req.body || {};
+  if (!payload) return res.json({ success: true });
+
+  try {
+    await initializeLiveCallTable();
+    if (type === "offer") {
+      const offerStr = typeof payload === "object" ? JSON.stringify(payload) : payload;
+      activeCallState.offer = offerStr;
+      await query(`UPDATE live_call_status SET offer = ? WHERE id = 1`, [offerStr]);
+    } else if (type === "answer") {
+      const answerStr = typeof payload === "object" ? JSON.stringify(payload) : (payload?.answer || payload);
+      activeCallState.answer = answerStr;
+      await query(`UPDATE live_call_status SET answer = ? WHERE id = 1`, [answerStr]);
+    } else if (type === "admin_ice") {
+      activeCallState.adminIceCandidates.push(payload);
+      const rows = await query(`SELECT admin_ice FROM live_call_status WHERE id = 1`);
+      let list = [];
+      if (rows.length > 0 && rows[0].admin_ice) {
+        try { list = JSON.parse(rows[0].admin_ice); } catch (_) {}
+      }
+      list.push(payload);
+      await query(`UPDATE live_call_status SET admin_ice = ? WHERE id = 1`, [JSON.stringify(list)]);
+    } else if (type === "viewer_ice") {
+      activeCallState.viewerIceCandidates.push(payload);
+      const rows = await query(`SELECT viewer_ice FROM live_call_status WHERE id = 1`);
+      let list = [];
+      if (rows.length > 0 && rows[0].viewer_ice) {
+        try { list = JSON.parse(rows[0].viewer_ice); } catch (_) {}
+      }
+      list.push(payload);
+      await query(`UPDATE live_call_status SET viewer_ice = ? WHERE id = 1`, [JSON.stringify(list)]);
+    }
+  } catch (err) {
+    console.error("Error updating live call signal in DB:", err);
+  }
+
+  res.json({ success: true });
+};
+
+const handleLiveCallSignals = async (req, res) => {
+  try {
+    await initializeLiveCallTable();
+    const rows = await query(`SELECT offer, answer, admin_ice, viewer_ice FROM live_call_status WHERE id = 1`);
+    if (rows.length > 0) {
+      let adminIceCandidates = [];
+      let viewerIceCandidates = [];
+      try { if (rows[0].admin_ice) adminIceCandidates = JSON.parse(rows[0].admin_ice); } catch (_) {}
+      try { if (rows[0].viewer_ice) viewerIceCandidates = JSON.parse(rows[0].viewer_ice); } catch (_) {}
+
+      return res.json({
+        offer: rows[0].offer || activeCallState.offer,
+        answer: rows[0].answer || activeCallState.answer,
+        adminIceCandidates: adminIceCandidates.length > 0 ? adminIceCandidates : activeCallState.adminIceCandidates,
+        viewerIceCandidates: viewerIceCandidates.length > 0 ? viewerIceCandidates : activeCallState.viewerIceCandidates
+      });
+    }
+  } catch (err) {
+    console.error("Error reading live call signals from DB:", err);
+  }
+
+  res.json({
+    offer: activeCallState.offer,
+    answer: activeCallState.answer,
+    adminIceCandidates: activeCallState.adminIceCandidates,
+    viewerIceCandidates: activeCallState.viewerIceCandidates
+  });
 };
 
 const handleLiveCallStatus = async (req, res) => {
@@ -121,11 +184,16 @@ const handleLiveCallStart = async (req, res) => {
   const offerStr = typeof offer === "object" ? JSON.stringify(offer) : (offer || null);
   activeCallState.isCallActive = true;
   activeCallState.offer = offerStr;
+  activeCallState.answer = null;
+  activeCallState.adminIceCandidates = [];
+  activeCallState.viewerIceCandidates = [];
 
   try {
     await initializeLiveCallTable();
     await query(
-      `INSERT INTO live_call_status (id, is_active, offer) VALUES (1, 1, ?) ON DUPLICATE KEY UPDATE is_active = 1, offer = ?`,
+      `INSERT INTO live_call_status (id, is_active, offer, answer, admin_ice, viewer_ice)
+       VALUES (1, 1, ?, NULL, '[]', '[]')
+       ON DUPLICATE KEY UPDATE is_active = 1, offer = ?, answer = NULL, admin_ice = '[]', viewer_ice = '[]'`,
       [offerStr, offerStr]
     );
   } catch (err) {
@@ -143,11 +211,16 @@ const handleLiveCallEnd = async (req, res) => {
   activeCallState.isCallActive = false;
   activeCallState.adminSocketId = null;
   activeCallState.offer = null;
+  activeCallState.answer = null;
+  activeCallState.adminIceCandidates = [];
+  activeCallState.viewerIceCandidates = [];
 
   try {
     await initializeLiveCallTable();
     await query(
-      `INSERT INTO live_call_status (id, is_active, offer) VALUES (1, 0, NULL) ON DUPLICATE KEY UPDATE is_active = 0, offer = NULL`
+      `INSERT INTO live_call_status (id, is_active, offer, answer, admin_ice, viewer_ice)
+       VALUES (1, 0, NULL, NULL, '[]', '[]')
+       ON DUPLICATE KEY UPDATE is_active = 0, offer = NULL, answer = NULL, admin_ice = '[]', viewer_ice = '[]'`
     );
   } catch (err) {
     console.error("Error updating live call end in DB:", err);

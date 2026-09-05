@@ -33,6 +33,12 @@
     },
     "api/live-call/status.js": {
       "includeFiles": "Backend/**"
+    },
+    "api/live-call/signal.js": {
+      "includeFiles": "Backend/**"
+    },
+    "api/live-call/signals.js": {
+      "includeFiles": "Backend/**"
     }
   },
   "rewrites": [
