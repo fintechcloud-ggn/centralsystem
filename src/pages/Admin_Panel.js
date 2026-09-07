@@ -54,8 +54,8 @@ function AdminPanel() {
         {/* Header */}
         <header className="relative flex flex-col gap-4 border-b border-slate-200/60 bg-white/70 px-4 py-3.5 backdrop-blur-md sm:px-6 lg:flex-row lg:items-center lg:justify-between shadow-xs">
 
-          {/* Left Side: Sidebar Toggle + Admin Control Center */}
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          {/* Left Side: Sidebar Toggle */}
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               type="button"
               className="rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-white md:hidden"
@@ -72,25 +72,6 @@ function AdminPanel() {
             >
               <ChevronIcon collapsed={isSidebarCollapsed} />
             </button>
-
-            {/* Admin Control Center Card (Left Side) */}
-            <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/80 bg-white/85 px-4 py-2.5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] backdrop-blur-md transition-all hover:border-slate-300">
-              <div className="h-8 w-1.5 shrink-0 rounded-full bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500" />
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold tracking-tight text-slate-900">
-                    Admin Control Center
-                  </p>
-                  <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 border border-emerald-200/60">
-                    <span className="mr-1 h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Active
-                  </span>
-                </div>
-                <p className="text-[11px] font-medium text-slate-400">
-                  Employees, contests, and content operations
-                </p>
-              </div>
-            </div>
           </div>
 
           {/* Right Side: Start Live Video Call Broadcast Button Card */}

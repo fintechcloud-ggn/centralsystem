@@ -10,7 +10,9 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [micEnabled, setMicEnabled] = useState(true);
   const [cameraEnabled, setCameraEnabled] = useState(true);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const screenStreamRef = useRef(null);
 
   const configuration = {
     iceServers: [
@@ -157,9 +159,75 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
   };
 
   const stopMediaTracks = () => {
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((track) => track.stop());
+      screenStreamRef.current = null;
+    }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
+    }
+  };
+
+  const toggleScreenShare = async () => {
+    try {
+      if (isScreenSharing) {
+        stopScreenShare();
+        return;
+      }
+
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true
+      });
+
+      screenStreamRef.current = screenStream;
+      const screenTrack = screenStream.getVideoTracks()[0];
+
+      if (!screenTrack) return;
+
+      screenTrack.onended = () => {
+        stopScreenShare();
+      };
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = screenStream;
+      }
+
+      if (pcRef.current) {
+        const sender = pcRef.current.getSenders().find((s) => s.track && s.track.kind === "video");
+        if (sender) {
+          await sender.replaceTrack(screenTrack);
+        }
+      }
+
+      setIsScreenSharing(true);
+    } catch (err) {
+      if (err.name !== "NotAllowedError") {
+        console.error("Screen share error:", err);
+        setErrorMsg("Failed to share screen.");
+      }
+    }
+  };
+
+  const stopScreenShare = async () => {
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((track) => track.stop());
+      screenStreamRef.current = null;
+    }
+
+    setIsScreenSharing(false);
+
+    if (streamRef.current && localVideoRef.current) {
+      localVideoRef.current.srcObject = streamRef.current;
+      const cameraTrack = streamRef.current.getVideoTracks()[0];
+
+      if (pcRef.current && cameraTrack) {
+        const sender = pcRef.current.getSenders().find((s) => s.track && s.track.kind === "video");
+        if (sender) {
+          await sender.replaceTrack(cameraTrack);
+        }
+      }
     }
   };
 
@@ -186,24 +254,33 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-      <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-white/20 bg-gray-900 shadow-2xl text-white">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 sm:p-6 backdrop-blur-md">
+      <div className="relative flex flex-col w-full max-w-6xl h-[88vh] max-h-[800px] overflow-hidden rounded-3xl border border-white/20 bg-gray-950 shadow-2xl text-white">
+        {/* Top Header */}
+        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 bg-gray-900/80 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <span className="flex h-3 w-3 rounded-full bg-red-500 animate-pulse" />
-            <h2 className="text-xl font-bold">Admin Live Video Call Broadcast</h2>
+            <h2 className="text-lg font-bold tracking-wide">
+              Admin Live Video Call Broadcast
+            </h2>
+            {isBroadcasting && (
+              <span className="ml-2 rounded-full bg-red-600/90 px-3 py-1 text-xs font-black uppercase tracking-wider text-white shadow-lg animate-pulse">
+                ● Live on Display Screens
+              </span>
+            )}
           </div>
+
           <button
             onClick={endBroadcast}
-            className="rounded-full bg-white/10 p-2 hover:bg-white/20 text-gray-300 hover:text-white"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-gray-300 transition hover:bg-white/20 hover:text-white"
+            title="Close"
           >
             ✕
           </button>
         </div>
 
-        {/* Video Preview */}
-        <div className="relative aspect-video w-full bg-black">
+        {/* Video Viewport */}
+        <div className="relative flex-1 w-full bg-black overflow-hidden">
           <video
             ref={localVideoRef}
             autoPlay
@@ -213,27 +290,21 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
           />
 
           {errorMsg && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/90 p-6 text-center text-red-400">
-              <p>{errorMsg}</p>
-            </div>
-          )}
-
-          {isBroadcasting && (
-            <div className="absolute top-4 left-4 flex items-center gap-2 rounded-full bg-red-600/90 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-lg animate-pulse">
-              ● Live on Display Screens
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/90 p-6 text-center text-red-400">
+              <p className="text-base font-medium">{errorMsg}</p>
             </div>
           )}
         </div>
 
-        {/* Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 p-6">
+        {/* Bottom Control Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 px-6 py-4 bg-gray-900/95 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <button
               onClick={toggleMic}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all border ${
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all border ${
                 micEnabled
-                  ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
-                  : "bg-red-500/20 border-red-500/40 text-red-400"
+                  ? "bg-white/10 text-white border-white/20 hover:bg-white/20"
+                  : "bg-red-500/20 text-red-400 border-red-500/40"
               }`}
             >
               {micEnabled ? "🎤 Mic On" : "🎙️ Mic Off"}
@@ -241,13 +312,24 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
 
             <button
               onClick={toggleCamera}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all border ${
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all border ${
                 cameraEnabled
-                  ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
-                  : "bg-red-500/20 border-red-500/40 text-red-400"
+                  ? "bg-white/10 text-white border-white/20 hover:bg-white/20"
+                  : "bg-red-500/20 text-red-400 border-red-500/40"
               }`}
             >
               {cameraEnabled ? "📹 Camera On" : "📷 Camera Off"}
+            </button>
+
+            <button
+              onClick={toggleScreenShare}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all border ${
+                isScreenSharing
+                  ? "bg-indigo-600 border-indigo-400 text-white animate-pulse hover:bg-indigo-500"
+                  : "bg-white/10 text-white border-white/20 hover:bg-white/20"
+              }`}
+            >
+              {isScreenSharing ? "🖥️ Stop Screen Share" : "🖥️ Share Screen"}
             </button>
           </div>
 
@@ -255,14 +337,14 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
             {!isBroadcasting ? (
               <button
                 onClick={startBroadcast}
-                className="rounded-xl bg-emerald-600 px-6 py-2.5 font-bold text-white shadow-lg hover:bg-emerald-500 transition-all hover:scale-105 active:scale-95"
+                className="flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-emerald-500 hover:scale-105 active:scale-95"
               >
                 🚀 Start Live Broadcast
               </button>
             ) : (
               <button
                 onClick={endBroadcast}
-                className="rounded-xl bg-red-600 px-6 py-2.5 font-bold text-white shadow-lg hover:bg-red-500 transition-all hover:scale-105 active:scale-95"
+                className="flex items-center gap-2 rounded-xl bg-red-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-red-500 hover:scale-105 active:scale-95"
               >
                 ⏹️ End Call Broadcast
               </button>
