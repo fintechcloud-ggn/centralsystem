@@ -346,7 +346,9 @@ const db = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 20,
-  connectTimeout: 10000
+  connectTimeout: 20000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000
 });
 
 // AWS S3 Config
@@ -366,7 +368,7 @@ const upload = multer({
 
 const query = (sql, values = []) =>
   new Promise((resolve, reject) => {
-    db.query({ sql, values, timeout: 10000 }, (err, rows) => {
+    db.query(sql, values, (err, rows) => {
       if (err) return reject(err);
       resolve(rows);
     });
@@ -1096,7 +1098,11 @@ const requireSuperUser = (req, res, next) => {
 
 app.post(["/api/admin/login", "/admin/login"], async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const rawEmail = req.body?.email;
+    const rawPassword = req.body?.password;
+
+    const email = typeof rawEmail === "string" ? rawEmail.trim() : "";
+    const password = typeof rawPassword === "string" ? rawPassword.trim() : "";
 
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
@@ -1115,7 +1121,7 @@ app.post(["/api/admin/login", "/admin/login"], async (req, res) => {
 
     const admin = rows[0];
     const adminRole = normalizeAdminRole(admin.role);
-    const isMatch = password === admin.password_hash;
+    const isMatch = password === admin.password_hash.trim();
     if (!isMatch) {
       return res.status(401).json({ error: "Invalid email or password" });
     }

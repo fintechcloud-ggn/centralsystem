@@ -24,7 +24,7 @@
   "scripts": {
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
     "start:frontend": "node scripts/start-frontend.js",
-    "start:backend": "npm --prefix Backend start",
+    "start:backend": "npm --prefix Backend run dev",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
