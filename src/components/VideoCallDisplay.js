@@ -33,23 +33,15 @@ export default function VideoCallDisplay({ onCallEnded }) {
     const pc = new RTCPeerConnection(configuration);
     pcRef.current = pc;
 
+    const getViewerId = () => socket?.id || viewerIdRef.current;
+
     pc.ontrack = (event) => {
       if (videoRef.current) {
         let stream = event.streams && event.streams[0];
         if (!stream) {
-          if (!videoRef.current.srcObject) {
-            videoRef.current.srcObject = new MediaStream();
-          }
-          stream = videoRef.current.srcObject;
-          if (!stream.getTracks().some((t) => t.id === event.track.id)) {
-            stream.addTrack(event.track);
-          }
-        } else {
-          if (videoRef.current.srcObject !== stream) {
-            videoRef.current.srcObject = stream;
-          }
+          stream = new MediaStream([event.track]);
         }
-
+        videoRef.current.srcObject = stream;
         videoRef.current.muted = isMuted;
         videoRef.current
           .play()
@@ -67,7 +59,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        const viewerSocketId = socket ? socket.id : viewerIdRef.current;
+        const viewerSocketId = getViewerId();
         if (socket) {
           socket.emit("webrtc:ice_candidate", {
             candidate: event.candidate,
@@ -102,7 +94,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
         if (pc.signalingState === "closed") return;
 
         const answerData = JSON.stringify(answer);
-        const viewerSocketId = socket ? socket.id : viewerIdRef.current;
+        const viewerSocketId = getViewerId();
 
         if (socket) {
           socket.emit("webrtc:answer", {
@@ -130,21 +122,31 @@ export default function VideoCallDisplay({ onCallEnded }) {
 
     // Emit viewer join signal so Admin initiates connection
     const joinBroadcast = () => {
-      const viewerSocketId = socket ? socket.id : viewerIdRef.current;
+      const viewerSocketId = getViewerId();
       if (socket) socket.emit("viewer:join", { viewerSocketId });
+
+      fetch(apiUrl("/api/live-call/signal"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "viewer_join",
+          viewerId: viewerSocketId,
+          payload: { timestamp: Date.now() }
+        })
+      }).catch(() => {});
     };
 
     joinBroadcast();
 
     const handleSocketOffer = ({ offer, adminSocketId, viewerSocketId }) => {
-      const myId = socket ? socket.id : viewerIdRef.current;
+      const myId = getViewerId();
       if (!viewerSocketId || viewerSocketId === myId) {
         setupStreamFromOffer(offer, adminSocketId);
       }
     };
 
     const handleIceCandidate = ({ candidate, viewerSocketId }) => {
-      const myId = socket ? socket.id : viewerIdRef.current;
+      const myId = getViewerId();
       if ((!viewerSocketId || viewerSocketId === myId) && candidate && pc.remoteDescription) {
         try {
           pc.addIceCandidate(new RTCIceCandidate(candidate));
@@ -160,7 +162,12 @@ export default function VideoCallDisplay({ onCallEnded }) {
       joinBroadcast();
     };
 
+    const handleConnect = () => {
+      joinBroadcast();
+    };
+
     if (socket) {
+      socket.on("connect", handleConnect);
       socket.on("webrtc:offer", handleSocketOffer);
       socket.on("webrtc:ice_candidate", handleIceCandidate);
       socket.on("call:started", handleCallStarted);
@@ -172,7 +179,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
       try {
         if (pc.signalingState === "closed") return;
 
-        const viewerSocketId = socket ? socket.id : viewerIdRef.current;
+        const viewerSocketId = getViewerId();
         const res = await fetch(apiUrl(`/api/live-call/signals?viewerId=${viewerSocketId}`));
         if (!res.ok || pc.signalingState === "closed") return;
 
@@ -206,6 +213,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
 
     return () => {
       if (socket) {
+        socket.off("connect", handleConnect);
         socket.off("webrtc:offer", handleSocketOffer);
         socket.off("webrtc:ice_candidate", handleIceCandidate);
         socket.off("call:started", handleCallStarted);
