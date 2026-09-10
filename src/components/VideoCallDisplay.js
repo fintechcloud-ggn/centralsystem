@@ -6,7 +6,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
   const videoRef = useRef(null);
   const pcRef = useRef(null);
   const [streamConnected, setStreamConnected] = useState(false);
-  const [isMuted, setIsMuted] = useState(true); // Default true for Smart TV autoplay compliance
+  const [isMuted, setIsMuted] = useState(false); // Sound ON by default
 
   const viewerIdRef = useRef(
     "viewer_" + Math.random().toString(36).substring(2, 9)
