@@ -43,17 +43,26 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
-// Real-time Video Call Signaling State
+// Real-time Video Call Signaling State (Multi-Viewer Support)
 let activeCallState = {
   isCallActive: false,
   adminSocketId: null,
-  offer: null,
-  answer: null,
-  adminIceCandidates: [],
-  viewerIceCandidates: []
+  viewers: {} // { [viewerId]: { offer: null, answer: null, adminIce: [], viewerIce: [] } }
 };
 
-// REST API Endpoints for Live Call (MySQL Database & Serverless persistent state)
+const getOrCreateViewerState = (viewerId) => {
+  if (!activeCallState.viewers[viewerId]) {
+    activeCallState.viewers[viewerId] = {
+      offer: null,
+      answer: null,
+      adminIce: [],
+      viewerIce: []
+    };
+  }
+  return activeCallState.viewers[viewerId];
+};
+
+// REST API Endpoints for Live Call
 const initializeLiveCallTable = async () => {
   try {
     await query(`
@@ -92,116 +101,78 @@ const initializeLiveCallTable = async () => {
 };
 
 const handleLiveCallSignal = async (req, res) => {
-  const { type, payload } = req.body || {};
+  const { type, payload, viewerId } = req.body || {};
   if (!payload) return res.json({ success: true });
 
-  try {
-    await initializeLiveCallTable();
-    if (type === "offer") {
-      const offerStr = typeof payload === "object" ? JSON.stringify(payload) : payload;
-      activeCallState.offer = offerStr;
-      await query(`UPDATE live_call_status SET offer = ? WHERE id = 1`, [offerStr]);
-    } else if (type === "answer") {
-      const answerStr = typeof payload === "object" ? JSON.stringify(payload) : (payload?.answer || payload);
-      activeCallState.answer = answerStr;
-      await query(`UPDATE live_call_status SET answer = ? WHERE id = 1`, [answerStr]);
-    } else if (type === "admin_ice") {
-      activeCallState.adminIceCandidates.push(payload);
-      const rows = await query(`SELECT admin_ice FROM live_call_status WHERE id = 1`);
-      let list = [];
-      if (rows.length > 0 && rows[0].admin_ice) {
-        try { list = JSON.parse(rows[0].admin_ice); } catch (_) {}
-      }
-      list.push(payload);
-      await query(`UPDATE live_call_status SET admin_ice = ? WHERE id = 1`, [JSON.stringify(list)]);
-    } else if (type === "viewer_ice") {
-      activeCallState.viewerIceCandidates.push(payload);
-      const rows = await query(`SELECT viewer_ice FROM live_call_status WHERE id = 1`);
-      let list = [];
-      if (rows.length > 0 && rows[0].viewer_ice) {
-        try { list = JSON.parse(rows[0].viewer_ice); } catch (_) {}
-      }
-      list.push(payload);
-      await query(`UPDATE live_call_status SET viewer_ice = ? WHERE id = 1`, [JSON.stringify(list)]);
-    }
-  } catch (err) {
-    console.error("Error updating live call signal in DB:", err);
+  const targetViewerId = viewerId || "default_viewer";
+  const vState = getOrCreateViewerState(targetViewerId);
+
+  if (type === "offer" || type === "admin_offer") {
+    const offerStr = typeof payload === "object" ? JSON.stringify(payload) : payload;
+    vState.offer = offerStr;
+  } else if (type === "answer" || type === "viewer_answer") {
+    const answerStr = typeof payload === "object" ? JSON.stringify(payload) : (payload?.answer || payload);
+    vState.answer = answerStr;
+  } else if (type === "admin_ice") {
+    vState.adminIce.push(payload);
+  } else if (type === "viewer_ice") {
+    vState.viewerIce.push(payload);
   }
 
   res.json({ success: true });
 };
 
 const handleLiveCallSignals = async (req, res) => {
-  try {
-    await initializeLiveCallTable();
-    const rows = await query(`SELECT offer, answer, admin_ice, viewer_ice FROM live_call_status WHERE id = 1`);
-    if (rows.length > 0) {
-      let adminIceCandidates = [];
-      let viewerIceCandidates = [];
-      try { if (rows[0].admin_ice) adminIceCandidates = JSON.parse(rows[0].admin_ice); } catch (_) {}
-      try { if (rows[0].viewer_ice) viewerIceCandidates = JSON.parse(rows[0].viewer_ice); } catch (_) {}
-
-      return res.json({
-        offer: rows[0].offer || activeCallState.offer,
-        answer: rows[0].answer || activeCallState.answer,
-        adminIceCandidates: adminIceCandidates.length > 0 ? adminIceCandidates : activeCallState.adminIceCandidates,
-        viewerIceCandidates: viewerIceCandidates.length > 0 ? viewerIceCandidates : activeCallState.viewerIceCandidates
-      });
-    }
-  } catch (err) {
-    console.error("Error reading live call signals from DB:", err);
-  }
+  const viewerId = req.query.viewerId || "default_viewer";
+  const vState = getOrCreateViewerState(viewerId);
 
   res.json({
-    offer: activeCallState.offer,
-    answer: activeCallState.answer,
-    adminIceCandidates: activeCallState.adminIceCandidates,
-    viewerIceCandidates: activeCallState.viewerIceCandidates
+    offer: vState.offer,
+    answer: vState.answer,
+    adminIceCandidates: vState.adminIce,
+    viewerIceCandidates: vState.viewerIce,
+    allViewers: Object.keys(activeCallState.viewers).map((id) => ({
+      viewerId: id,
+      answer: activeCallState.viewers[id].answer,
+      viewerIceCandidates: activeCallState.viewers[id].viewerIce
+    }))
   });
 };
 
 const handleLiveCallStatus = async (req, res) => {
   try {
     await initializeLiveCallTable();
-    const rows = await query(`SELECT is_active, offer FROM live_call_status WHERE id = 1`);
+    const rows = await query(`SELECT is_active FROM live_call_status WHERE id = 1`);
     if (rows.length > 0) {
       return res.json({
-        isCallActive: Boolean(rows[0].is_active),
-        offer: rows[0].offer
+        isCallActive: Boolean(rows[0].is_active) || activeCallState.isCallActive
       });
     }
   } catch (err) {
     console.error("Error reading live call status from DB:", err);
   }
   res.json({
-    isCallActive: activeCallState.isCallActive,
-    offer: activeCallState.offer
+    isCallActive: activeCallState.isCallActive
   });
 };
 
 const handleLiveCallStart = async (req, res) => {
-  const { offer } = req.body || {};
-  const offerStr = typeof offer === "object" ? JSON.stringify(offer) : (offer || null);
   activeCallState.isCallActive = true;
-  activeCallState.offer = offerStr;
-  activeCallState.answer = null;
-  activeCallState.adminIceCandidates = [];
-  activeCallState.viewerIceCandidates = [];
+  activeCallState.viewers = {};
 
   try {
     await initializeLiveCallTable();
     await query(
       `INSERT INTO live_call_status (id, is_active, offer, answer, admin_ice, viewer_ice)
-       VALUES (1, 1, ?, NULL, '[]', '[]')
-       ON DUPLICATE KEY UPDATE is_active = 1, offer = ?, answer = NULL, admin_ice = '[]', viewer_ice = '[]'`,
-      [offerStr, offerStr]
+       VALUES (1, 1, NULL, NULL, '[]', '[]')
+       ON DUPLICATE KEY UPDATE is_active = 1, offer = NULL, answer = NULL, admin_ice = '[]', viewer_ice = '[]'`
     );
   } catch (err) {
     console.error("Error updating live call start in DB:", err);
   }
 
   if (io) {
-    io.emit("call:started", { adminSocketId: activeCallState.adminSocketId, offer: offerStr });
+    io.emit("call:started", { adminSocketId: activeCallState.adminSocketId });
   }
 
   res.json({ success: true, isCallActive: true });
@@ -210,10 +181,7 @@ const handleLiveCallStart = async (req, res) => {
 const handleLiveCallEnd = async (req, res) => {
   activeCallState.isCallActive = false;
   activeCallState.adminSocketId = null;
-  activeCallState.offer = null;
-  activeCallState.answer = null;
-  activeCallState.adminIceCandidates = [];
-  activeCallState.viewerIceCandidates = [];
+  activeCallState.viewers = {};
 
   try {
     await initializeLiveCallTable();
@@ -240,54 +208,77 @@ app.post(["/api/live-call/signal", "/live-call/signal"], handleLiveCallSignal);
 app.get(["/api/live-call/signals", "/live-call/signals"], handleLiveCallSignals);
 
 io.on("connection", (socket) => {
-  // Send initial call status to client upon connection
   socket.emit("call:status", {
-    isCallActive: activeCallState.isCallActive,
-    offer: activeCallState.offer
+    isCallActive: activeCallState.isCallActive
   });
 
-  socket.on("admin:start_call", (data) => {
+  socket.on("admin:start_call", () => {
     activeCallState.isCallActive = true;
     activeCallState.adminSocketId = socket.id;
-    activeCallState.offer = data?.offer || null;
-    io.emit("call:started", { adminSocketId: socket.id, offer: activeCallState.offer });
+    activeCallState.viewers = {};
+    io.emit("call:started", { adminSocketId: socket.id });
   });
 
-  socket.on("viewer:join", () => {
-    if (activeCallState.isCallActive && activeCallState.adminSocketId) {
-      io.to(activeCallState.adminSocketId).emit("viewer:joined", {
-        viewerSocketId: socket.id
-      });
+  socket.on("viewer:join", (data) => {
+    const viewerSocketId = socket.id;
+    getOrCreateViewerState(viewerSocketId);
+
+    const adminTarget = activeCallState.adminSocketId;
+    if (adminTarget) {
+      io.to(adminTarget).emit("viewer:joined", { viewerSocketId });
+    } else {
+      socket.broadcast.emit("viewer:joined", { viewerSocketId });
     }
   });
 
   socket.on("webrtc:offer", ({ viewerSocketId, offer }) => {
-    io.to(viewerSocketId).emit("webrtc:offer", {
-      adminSocketId: socket.id,
-      offer
-    });
-  });
-
-  socket.on("webrtc:answer", ({ adminSocketId, answer }) => {
-    const targetAdmin = adminSocketId || activeCallState.adminSocketId;
-    if (targetAdmin) {
-      io.to(targetAdmin).emit("webrtc:answer", {
-        viewerSocketId: socket.id,
-        answer
+    if (viewerSocketId) {
+      const vState = getOrCreateViewerState(viewerSocketId);
+      vState.offer = typeof offer === "object" ? JSON.stringify(offer) : offer;
+      io.to(viewerSocketId).emit("webrtc:offer", {
+        adminSocketId: socket.id,
+        offer: vState.offer,
+        viewerSocketId
       });
     }
   });
 
-  socket.on("webrtc:ice_candidate", ({ targetSocketId, candidate }) => {
-    if (targetSocketId) {
-      io.to(targetSocketId).emit("webrtc:ice_candidate", {
+  socket.on("webrtc:answer", ({ adminSocketId, viewerSocketId, answer }) => {
+    const targetViewer = viewerSocketId || socket.id;
+    const vState = getOrCreateViewerState(targetViewer);
+    vState.answer = typeof answer === "object" ? JSON.stringify(answer) : answer;
+
+    const targetAdmin = adminSocketId || activeCallState.adminSocketId;
+    if (targetAdmin) {
+      io.to(targetAdmin).emit("webrtc:answer", {
+        viewerSocketId: targetViewer,
+        answer: vState.answer
+      });
+    }
+  });
+
+  socket.on("webrtc:ice_candidate", ({ targetSocketId, candidate, viewerSocketId }) => {
+    const target = targetSocketId;
+    const vId = viewerSocketId || socket.id;
+    const vState = getOrCreateViewerState(vId);
+
+    if (socket.id === activeCallState.adminSocketId) {
+      vState.adminIce.push(candidate);
+    } else {
+      vState.viewerIce.push(candidate);
+    }
+
+    if (target) {
+      io.to(target).emit("webrtc:ice_candidate", {
         fromSocketId: socket.id,
-        candidate
+        candidate,
+        viewerSocketId: vId
       });
     } else {
       socket.broadcast.emit("webrtc:ice_candidate", {
         fromSocketId: socket.id,
-        candidate
+        candidate,
+        viewerSocketId: vId
       });
     }
   });
@@ -295,9 +286,7 @@ io.on("connection", (socket) => {
   socket.on("admin:end_call", () => {
     activeCallState.isCallActive = false;
     activeCallState.adminSocketId = null;
-    activeCallState.offer = null;
-    activeCallState.answers = {};
-    activeCallState.iceCandidates = [];
+    activeCallState.viewers = {};
     io.emit("call:ended");
   });
 
@@ -305,8 +294,10 @@ io.on("connection", (socket) => {
     if (socket.id === activeCallState.adminSocketId) {
       activeCallState.isCallActive = false;
       activeCallState.adminSocketId = null;
-      activeCallState.offer = null;
+      activeCallState.viewers = {};
       io.emit("call:ended");
+    } else if (activeCallState.viewers[socket.id]) {
+      delete activeCallState.viewers[socket.id];
     }
   });
 });

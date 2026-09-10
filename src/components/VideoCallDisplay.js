@@ -6,7 +6,11 @@ export default function VideoCallDisplay({ onCallEnded }) {
   const videoRef = useRef(null);
   const pcRef = useRef(null);
   const [streamConnected, setStreamConnected] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true); // Default true for Smart TV autoplay compliance
+
+  const viewerIdRef = useRef(
+    "viewer_" + Math.random().toString(36).substring(2, 9)
+  );
 
   const onCallEndedRef = useRef(onCallEnded);
   onCallEndedRef.current = onCallEnded;
@@ -46,19 +50,16 @@ export default function VideoCallDisplay({ onCallEnded }) {
           }
         }
 
-        if (videoRef.current.paused) {
-          videoRef.current.muted = isMuted;
-          videoRef.current.volume = 1.0;
-          videoRef.current
-            .play()
-            .catch((err) => {
-              if (err.name === "NotAllowedError") {
-                videoRef.current.muted = true;
-                setIsMuted(true);
-                videoRef.current.play().catch(() => {});
-              }
-            });
-        }
+        videoRef.current.muted = isMuted;
+        videoRef.current
+          .play()
+          .catch(() => {
+            if (videoRef.current) {
+              videoRef.current.muted = true;
+              setIsMuted(true);
+              videoRef.current.play().catch(() => {});
+            }
+          });
 
         setStreamConnected(true);
       }
@@ -66,17 +67,27 @@ export default function VideoCallDisplay({ onCallEnded }) {
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        if (socket) socket.emit("webrtc:ice_candidate", { candidate: event.candidate });
+        const viewerSocketId = socket ? socket.id : viewerIdRef.current;
+        if (socket) {
+          socket.emit("webrtc:ice_candidate", {
+            candidate: event.candidate,
+            viewerSocketId
+          });
+        }
 
         fetch(apiUrl("/api/live-call/signal"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "viewer_ice", payload: event.candidate })
-        }).catch(() => { });
+          body: JSON.stringify({
+            type: "viewer_ice",
+            viewerId: viewerSocketId,
+            payload: event.candidate
+          })
+        }).catch(() => {});
       }
     };
 
-    const setupStreamFromOffer = async (offerStr) => {
+    const setupStreamFromOffer = async (offerStr, adminSocketId) => {
       try {
         if (!offerStr || pc.signalingState === "closed" || pc.remoteDescription) return;
         const offerObj = typeof offerStr === "string" ? JSON.parse(offerStr) : offerStr;
@@ -91,14 +102,25 @@ export default function VideoCallDisplay({ onCallEnded }) {
         if (pc.signalingState === "closed") return;
 
         const answerData = JSON.stringify(answer);
+        const viewerSocketId = socket ? socket.id : viewerIdRef.current;
 
-        if (socket) socket.emit("webrtc:answer", { answer: answerData });
+        if (socket) {
+          socket.emit("webrtc:answer", {
+            adminSocketId,
+            viewerSocketId,
+            answer: answerData
+          });
+        }
 
         fetch(apiUrl("/api/live-call/signal"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "answer", payload: answerData })
-        }).catch(() => { });
+          body: JSON.stringify({
+            type: "viewer_answer",
+            viewerId: viewerSocketId,
+            payload: answerData
+          })
+        }).catch(() => {});
       } catch (err) {
         if (pc.signalingState !== "closed") {
           console.error("Error setting up stream from offer:", err);
@@ -106,27 +128,56 @@ export default function VideoCallDisplay({ onCallEnded }) {
       }
     };
 
-    // Socket Handlers
-    const handleSocketOffer = ({ offer }) => {
-      setupStreamFromOffer(offer);
+    // Emit viewer join signal so Admin initiates connection
+    const joinBroadcast = () => {
+      const viewerSocketId = socket ? socket.id : viewerIdRef.current;
+      if (socket) socket.emit("viewer:join", { viewerSocketId });
+    };
+
+    joinBroadcast();
+
+    const handleSocketOffer = ({ offer, adminSocketId, viewerSocketId }) => {
+      const myId = socket ? socket.id : viewerIdRef.current;
+      if (!viewerSocketId || viewerSocketId === myId) {
+        setupStreamFromOffer(offer, adminSocketId);
+      }
+    };
+
+    const handleIceCandidate = ({ candidate, viewerSocketId }) => {
+      const myId = socket ? socket.id : viewerIdRef.current;
+      if ((!viewerSocketId || viewerSocketId === myId) && candidate && pc.remoteDescription) {
+        try {
+          pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (_) {}
+      }
     };
 
     const handleCallEnded = () => {
       if (onCallEndedRef.current) onCallEndedRef.current();
     };
 
-    socket.on("webrtc:offer", handleSocketOffer);
-    socket.on("call:ended", handleCallEnded);
+    const handleCallStarted = () => {
+      joinBroadcast();
+    };
 
-    // Initial Fetch & Polling for signals over HTTP
+    if (socket) {
+      socket.on("webrtc:offer", handleSocketOffer);
+      socket.on("webrtc:ice_candidate", handleIceCandidate);
+      socket.on("call:started", handleCallStarted);
+      socket.on("call:ended", handleCallEnded);
+    }
+
+    // HTTP Polling fallback
     const pollSignals = async () => {
       try {
         if (pc.signalingState === "closed") return;
 
-        const res = await fetch(apiUrl("/api/live-call/signals"));
+        const viewerSocketId = socket ? socket.id : viewerIdRef.current;
+        const res = await fetch(apiUrl(`/api/live-call/signals?viewerId=${viewerSocketId}`));
         if (!res.ok || pc.signalingState === "closed") return;
 
         const data = await res.json();
+
         if (data?.offer && !pc.remoteDescription && pc.signalingState !== "closed") {
           await setupStreamFromOffer(data.offer);
         }
@@ -140,7 +191,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
                 processedCandidatesRef.current.add(candKey);
                 await pc.addIceCandidate(new RTCIceCandidate(cand));
               }
-            } catch (_) { }
+            } catch (_) {}
           }
         }
       } catch (err) {
@@ -154,8 +205,12 @@ export default function VideoCallDisplay({ onCallEnded }) {
     const interval = setInterval(pollSignals, 1000);
 
     return () => {
-      socket.off("webrtc:offer", handleSocketOffer);
-      socket.off("call:ended", handleCallEnded);
+      if (socket) {
+        socket.off("webrtc:offer", handleSocketOffer);
+        socket.off("webrtc:ice_candidate", handleIceCandidate);
+        socket.off("call:started", handleCallStarted);
+        socket.off("call:ended", handleCallEnded);
+      }
       clearInterval(interval);
       if (pc.signalingState !== "closed") {
         pc.close();
@@ -186,7 +241,7 @@ export default function VideoCallDisplay({ onCallEnded }) {
       videoRef.current.muted = false;
       videoRef.current.volume = 1.0;
       setIsMuted(false);
-      videoRef.current.play().catch(() => { });
+      videoRef.current.play().catch(() => {});
     }
   };
 
@@ -202,6 +257,21 @@ export default function VideoCallDisplay({ onCallEnded }) {
     }
   };
 
+  // Keyboard / TV Remote button listener for unmuting sound easily
+  useEffect(() => {
+    const handleKeyDown = () => {
+      if (isMuted && videoRef.current) {
+        videoRef.current.muted = false;
+        videoRef.current.volume = 1.0;
+        setIsMuted(false);
+        videoRef.current.play().catch(() => {});
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMuted]);
+
   return (
     <div
       onClick={enableAudio}
@@ -213,9 +283,6 @@ export default function VideoCallDisplay({ onCallEnded }) {
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-600"></span>
         </span>
-        {/* <span className="text-sm font-black tracking-widest uppercase text-white">
-          Live Admin Broadcast
-        </span> */}
         <span className="text-sm font-black tracking-widest uppercase text-white">
           Live Admin Broadcast
         </span>
@@ -224,12 +291,13 @@ export default function VideoCallDisplay({ onCallEnded }) {
       {/* Audio Sound Toggle Control */}
       <button
         onClick={toggleSound}
-        className={`absolute top-6 right-6 z-20 flex items-center gap-2 rounded-full px-5 py-2.5 backdrop-blur-md border shadow-2xl text-sm font-bold transition-all ${isMuted
+        className={`absolute top-6 right-6 z-20 flex items-center gap-2 rounded-full px-5 py-2.5 backdrop-blur-md border shadow-2xl text-sm font-bold transition-all ${
+          isMuted
             ? "bg-amber-500/90 border-amber-400 text-black animate-bounce hover:bg-amber-400"
             : "bg-white/15 border-white/25 text-white hover:bg-white/25"
-          }`}
+        }`}
       >
-        {isMuted ? "🔊 Tap Anywhere to Enable Audio" : "🔊 Sound On (Tap to Mute)"}
+        {isMuted ? "🔊 Press Any TV Remote Button / Click to Enable Sound" : "🔊 Sound On (Click to Mute)"}
       </button>
 
       {/* Main Stream Video Element */}
@@ -253,3 +321,4 @@ export default function VideoCallDisplay({ onCallEnded }) {
     </div>
   );
 }
+

@@ -4,7 +4,7 @@ import { apiUrl } from "../lib/api";
 
 export default function AdminVideoCallModal({ isOpen, onClose }) {
   const localVideoRef = useRef(null);
-  const pcRef = useRef(null);
+  const peerConnectionsRef = useRef(new Map()); // Map of viewerId -> RTCPeerConnection
   const streamRef = useRef(null);
 
   const [isBroadcasting, setIsBroadcasting] = useState(false);
@@ -44,96 +44,189 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
 
     return () => {
       stopMediaTracks();
-      if (pcRef.current) pcRef.current.close();
+      closeAllPeerConnections();
     };
   }, [isOpen]);
 
-  const processedCandidatesRef = useRef(new Set());
-
-  // Polling for viewer WebRTC answer and ICE candidates over REST API (Vercel Serverless Compatible)
-  useEffect(() => {
-    if (!isOpen || !isBroadcasting) return;
-
-    const checkSignals = async () => {
+  const closeAllPeerConnections = () => {
+    peerConnectionsRef.current.forEach((pc) => {
       try {
-        const pc = pcRef.current;
-        if (!pc || pc.signalingState === "closed") return;
+        if (pc.signalingState !== "closed") pc.close();
+      } catch (_) {}
+    });
+    peerConnectionsRef.current.clear();
+  };
 
-        const res = await fetch(apiUrl("/api/live-call/signals"));
-        if (!res.ok || pc.signalingState === "closed") return;
-
-        const data = await res.json();
-
-        // If viewer answer received and not yet set
-        if (data?.answer && pc.signalingState === "have-local-offer") {
-          const answerObj = typeof data.answer === "string" ? JSON.parse(data.answer) : data.answer;
-          await pc.setRemoteDescription(new RTCSessionDescription(answerObj));
-        }
-
-        // Add viewer ICE candidates
-        if (data?.viewerIceCandidates && Array.isArray(data.viewerIceCandidates)) {
-          for (const cand of data.viewerIceCandidates) {
-            try {
-              if (!cand || pc.signalingState === "closed" || !pc.remoteDescription) continue;
-              const candKey = typeof cand === "string" ? cand : JSON.stringify(cand);
-              if (!processedCandidatesRef.current.has(candKey)) {
-                processedCandidatesRef.current.add(candKey);
-                await pc.addIceCandidate(new RTCIceCandidate(cand));
-              }
-            } catch (_) {}
-          }
-        }
-      } catch (err) {
-        if (pcRef.current?.signalingState !== "closed") {
-          console.error("Error polling signals on admin:", err);
-        }
-      }
-    };
-
-    const interval = setInterval(checkSignals, 1000);
-    return () => clearInterval(interval);
-  }, [isOpen, isBroadcasting]);
-
-  const startBroadcast = async () => {
+  const createPeerConnectionForViewer = async (viewerId) => {
     try {
-      if (!streamRef.current) return;
+      if (!viewerId) return;
+
+      // Close existing connection for this viewer if present
+      if (peerConnectionsRef.current.has(viewerId)) {
+        const oldPc = peerConnectionsRef.current.get(viewerId);
+        try {
+          if (oldPc.signalingState !== "closed") oldPc.close();
+        } catch (_) {}
+        peerConnectionsRef.current.delete(viewerId);
+      }
+
+      const activeStream = screenStreamRef.current || streamRef.current;
+      if (!activeStream) return;
 
       const pc = new RTCPeerConnection(configuration);
-      pcRef.current = pc;
 
-      // Add local video/audio tracks
-      streamRef.current.getTracks().forEach((track) => {
-        pc.addTrack(track, streamRef.current);
+      activeStream.getTracks().forEach((track) => {
+        pc.addTrack(track, activeStream);
       });
 
       pc.onicecandidate = (event) => {
         if (event.candidate) {
-          // Relay ICE candidate via Socket and REST API
           const socket = getSocket();
-          if (socket) socket.emit("webrtc:ice_candidate", { candidate: event.candidate });
+          if (socket) {
+            socket.emit("webrtc:ice_candidate", {
+              targetSocketId: viewerId,
+              candidate: event.candidate,
+              viewerSocketId: viewerId
+            });
+          }
 
           fetch(apiUrl("/api/live-call/signal"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "admin_ice", payload: event.candidate })
+            body: JSON.stringify({ type: "admin_ice", viewerId, payload: event.candidate })
           }).catch(() => {});
         }
       };
+
+      peerConnectionsRef.current.set(viewerId, pc);
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
       const offerData = JSON.stringify(offer);
 
-      // Emit via Socket
       const socket = getSocket();
-      if (socket) socket.emit("admin:start_call", { offer: offerData });
+      if (socket) {
+        socket.emit("webrtc:offer", { viewerSocketId: viewerId, offer: offerData });
+      }
 
-      // Post via REST API for Vercel Serverless persistence
-      await fetch(apiUrl("/api/live-call/start"), {
+      fetch(apiUrl("/api/live-call/signal"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ offer: offerData })
+        body: JSON.stringify({ type: "admin_offer", viewerId, payload: offerData })
+      }).catch(() => {});
+    } catch (err) {
+      console.error(`Failed to create peer connection for viewer ${viewerId}:`, err);
+    }
+  };
+
+  // Socket & Polling Event Listeners for Multi-Viewer Broadcast
+  useEffect(() => {
+    if (!isOpen || !isBroadcasting) return;
+
+    const socket = getSocket();
+
+    const handleViewerJoined = ({ viewerSocketId }) => {
+      if (viewerSocketId) {
+        createPeerConnectionForViewer(viewerSocketId);
+      }
+    };
+
+    const handleViewerAnswer = async ({ viewerSocketId, answer }) => {
+      try {
+        const targetId = viewerSocketId || "default_viewer";
+        const pc = peerConnectionsRef.current.get(targetId);
+        if (pc && pc.signalingState === "have-local-offer" && answer) {
+          const answerObj = typeof answer === "string" ? JSON.parse(answer) : answer;
+          await pc.setRemoteDescription(new RTCSessionDescription(answerObj));
+        }
+      } catch (err) {
+        console.error("Error setting viewer answer:", err);
+      }
+    };
+
+    const handleViewerIceCandidate = async ({ viewerSocketId, candidate }) => {
+      try {
+        const targetId = viewerSocketId || "default_viewer";
+        const pc = peerConnectionsRef.current.get(targetId);
+        if (pc && pc.remoteDescription && candidate) {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        }
+      } catch (_) {}
+    };
+
+    if (socket) {
+      socket.on("viewer:joined", handleViewerJoined);
+      socket.on("webrtc:answer", handleViewerAnswer);
+      socket.on("webrtc:ice_candidate", handleViewerIceCandidate);
+    }
+
+    // Polling fallback for REST API viewers
+    const checkSignals = async () => {
+      try {
+        const res = await fetch(apiUrl("/api/live-call/signals"));
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (data?.allViewers && Array.isArray(data.allViewers)) {
+          for (const viewer of data.allViewers) {
+            const vId = viewer.viewerId;
+            if (!vId) continue;
+
+            let pc = peerConnectionsRef.current.get(vId);
+
+            // If viewer has no peer connection yet, create one
+            if (!pc) {
+              await createPeerConnectionForViewer(vId);
+              pc = peerConnectionsRef.current.get(vId);
+            }
+
+            // Process answer if waiting for answer
+            if (pc && pc.signalingState === "have-local-offer" && viewer.answer) {
+              const answerObj = typeof viewer.answer === "string" ? JSON.parse(viewer.answer) : viewer.answer;
+              await pc.setRemoteDescription(new RTCSessionDescription(answerObj));
+            }
+
+            // Process viewer ICE candidates
+            if (pc && pc.remoteDescription && Array.isArray(viewer.viewerIceCandidates)) {
+              for (const cand of viewer.viewerIceCandidates) {
+                try {
+                  await pc.addIceCandidate(new RTCIceCandidate(cand));
+                } catch (_) {}
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error polling signals on admin:", err);
+      }
+    };
+
+    const interval = setInterval(checkSignals, 1000);
+
+    return () => {
+      if (socket) {
+        socket.off("viewer:joined", handleViewerJoined);
+        socket.off("webrtc:answer", handleViewerAnswer);
+        socket.off("webrtc:ice_candidate", handleViewerIceCandidate);
+      }
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isBroadcasting]);
+
+  const startBroadcast = async () => {
+    try {
+      if (!streamRef.current) return;
+
+      closeAllPeerConnections();
+
+      const socket = getSocket();
+      if (socket) socket.emit("admin:start_call");
+
+      await fetch(apiUrl("/api/live-call/start"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
       });
 
       setIsBroadcasting(true);
@@ -151,10 +244,7 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
 
     setIsBroadcasting(false);
     stopMediaTracks();
-    if (pcRef.current) {
-      pcRef.current.close();
-      pcRef.current = null;
-    }
+    closeAllPeerConnections();
     onClose();
   };
 
@@ -194,12 +284,13 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
         localVideoRef.current.srcObject = screenStream;
       }
 
-      if (pcRef.current) {
-        const sender = pcRef.current.getSenders().find((s) => s.track && s.track.kind === "video");
+      // Replace track on ALL active viewer peer connections
+      peerConnectionsRef.current.forEach(async (pc) => {
+        const sender = pc.getSenders().find((s) => s.track && s.track.kind === "video");
         if (sender) {
           await sender.replaceTrack(screenTrack);
         }
-      }
+      });
 
       setIsScreenSharing(true);
     } catch (err) {
@@ -222,11 +313,13 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
       localVideoRef.current.srcObject = streamRef.current;
       const cameraTrack = streamRef.current.getVideoTracks()[0];
 
-      if (pcRef.current && cameraTrack) {
-        const sender = pcRef.current.getSenders().find((s) => s.track && s.track.kind === "video");
-        if (sender) {
-          await sender.replaceTrack(cameraTrack);
-        }
+      if (cameraTrack) {
+        peerConnectionsRef.current.forEach(async (pc) => {
+          const sender = pc.getSenders().find((s) => s.track && s.track.kind === "video");
+          if (sender) {
+            await sender.replaceTrack(cameraTrack);
+          }
+        });
       }
     }
   };
@@ -265,7 +358,7 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
             </h2>
             {isBroadcasting && (
               <span className="ml-2 rounded-full bg-red-600/90 px-3 py-1 text-xs font-black uppercase tracking-wider text-white shadow-lg animate-pulse">
-                ● Live on Display Screens
+                ● Live on Display Screens ({peerConnectionsRef.current.size} TVs Connected)
               </span>
             )}
           </div>
@@ -355,3 +448,4 @@ export default function AdminVideoCallModal({ isOpen, onClose }) {
     </div>
   );
 }
+
