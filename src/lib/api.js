@@ -11,7 +11,17 @@ export const API_BASE_URL =
   (process.env.NODE_ENV === "development" ? getLocalApiBaseUrl() : "");
 
 export const apiUrl = (path) => {
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${API_BASE_URL}${normalizedPath}`;
+  let base = (API_BASE_URL || "").trim().replace(/\/+$/, "");
+  let p = path.startsWith("/") ? path : `/${path}`;
+
+  // Prevent double /api duplication (e.g. base = "/api" or base ending with "/api" and p = "/api/...")
+  if (base.endsWith("/api") && p.startsWith("/api/")) {
+    p = p.substring(4);
+  } else if ((base === "api" || base === "/api") && p.startsWith("/api/")) {
+    base = "";
+  }
+
+  return `${base}${p}`;
 };
+
 
